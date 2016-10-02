@@ -1,0 +1,10 @@
+{
+	"name": "dmatch",
+	"authors": [
+		"Nakano Masaki"
+	],
+	"description": "pattern matching library for d",
+	"copyright": "Copyright © 2016, Nakano Masaki",
+	"license": "BSL-1.0",
+	"buildOptions":["unittests"]
+}
