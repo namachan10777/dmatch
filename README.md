@@ -16,7 +16,13 @@ int add_all(int[] list){
 }
 ```
 ### sample pattern
-#### List
+#### InputRange
+```
+x::xs
+[]
+x::[]
+```
+#### Array
 ```
 []
 [x]
