@@ -1,0 +1,9 @@
+{
+	"name": "tvariant",
+	"authors": [
+		"Nakano Masaki"
+	],
+	"description": "Tagged Variant for D",
+	"copyright": "Copyright © 2016, namachan",
+	"license": "BSL-1.0"
+}
