@@ -5,3 +5,5 @@ __dummy.html
 *.obj
 .atom-build.yml
 __test__library__
+*.a
+dub.selections.json
