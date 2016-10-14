@@ -1,14 +1,116 @@
 module tvariant;
 
 import std.variant : VariantException,VariantN,maxSize,This;
-import std.typecons : Tuple;
+import std.typecons : Tuple,ReplaceType,tuple;
 import std.meta : AliasSeq;
+import std.traits : isPointer,PointerTarget;
+
+import std.stdio;
+
+private:
 
 alias None = void;
 
-static class TVariantException : VariantException {
-	this (string msg) {
-		super(msg);
+public:
+
+enum isType(T) = true;
+enum isType(alias T) = false;
+
+template MutilateTemplate(X : T!P,alias T,P...) {
+	enum isTemplate = true;
+	alias Template = T;
+	alias Parameters = P;
+}
+template MutilateTemplate(X...) {
+	enum isTemplate = false;
+	alias Template = void;
+	alias Parameters = void;
+}
+unittest {
+	static assert (MutilateTemplate!(Tuple!(int,real)).isTemplate);
+	static assert (is(MutilateTemplate!(Tuple!(int,real)).Parameters == AliasSeq!(int,real)));
+	static assert (is(MutilateTemplate!(Tuple!(int,real)).Template!(int,real) == Tuple!(int,real)));
+
+	static assert (!MutilateTemplate!int.isTemplate);
+	static assert (!MutilateTemplate!"x".isTemplate);
+}
+
+template hasT(T,Specs...) {
+	import std.traits : isPointer,PointerTarget;
+	static if (Specs.length == 0) {
+		enum hasT = false;
+	}
+	else static if (is(Specs[0] == T)) {
+		enum hasT = true;
+	}
+	else static if (!isType!(Specs[0])) {
+		enum hasT = hasT!(T,Specs[1..$]);
+	}
+	else static if (isPointer!(Specs[0])){
+		enum hasT = hasT!(T,PointerTarget!(Specs[0]),Specs[1..$]);
+	}
+	else static if (MutilateTemplate!(Specs[0]).isTemplate){
+		alias Mutilated = MutilateTemplate!(Specs[0]);
+		enum hasT =
+			hasT!(T,Mutilated.Parameters,Specs[1..$]);
+	}
+	else {
+		enum hasT =
+			hasT!(T,Specs[1..$]);
+	}
+}
+unittest {
+	static assert (hasT!(short,AliasSeq!(string,int,short,real)));
+	static assert (hasT!(short*,AliasSeq!(int,Tuple!(int,short*))));
+	static assert (hasT!(short,AliasSeq!(int,Tuple!(int,short*))));
+}
+
+template ReplaceTypeRecurse(From,To,T...) {
+	static if (T.length == 0) {
+		alias ReplaceTypeRecurse = AliasSeq!();
+	}
+	else static if (!isType!(T[0])) {
+		alias ReplaceTypeRecurse =
+			AliasSeq!(
+				T[0],
+				ReplaceTypeRecurse!(From,To,T[1..$]));
+	}
+	else static if (is(T[0] == From)) {
+		alias ReplaceTypeRecurse =
+			AliasSeq!(To,ReplaceTypeRecurse!(From,To,T[1..$]));
+	}
+	else static if (isPointer!(T[0])) {
+		alias ReplaceTypeRecurse =
+			AliasSeq!(
+				ReplaceTypeRecurse!(From,To,PointerTarget!(T[0]))[0]*,
+				ReplaceTypeRecurse!(From,To,T[1..$]));	
+	}
+	else {
+		alias Mutilated = MutilateTemplate!(T[0]);
+		static if (Mutilated.isTemplate) {
+			alias ReplaceTypeRecurse =
+				AliasSeq!(
+					Mutilated.Template!(
+						ReplaceTypeRecurse!(From,To,Mutilated.Parameters)),
+					ReplaceTypeRecurse!(From,To,T[1..$]));
+		}
+		else {
+			alias ReplaceTypeRecurse =
+				AliasSeq!(T[0],ReplaceTypeRecurse!(From,To,T[1..$]));
+		}
+	}
+}
+unittest {
+	static assert (is(ReplaceTypeRecurse!(int,double,AliasSeq!(float,int,real)) == AliasSeq!(float,double,real)));
+	static assert (is(ReplaceTypeRecurse!(int,real,Tuple!(int,bool)) == AliasSeq!(Tuple!(real,bool))));
+	static assert (is(ReplaceTypeRecurse!(int,real,Tuple!(int,int)) == AliasSeq!(Tuple!(real,real))));
+	static assert (is(ReplaceTypeRecurse!(int,real,Tuple!(int,string,Tuple!(int,int))) == AliasSeq!(Tuple!(real,string,Tuple!(real,real)))));
+	static assert (is(ReplaceTypeRecurse!(int*,real*,Tuple!(int,string,Tuple!(int*,int*)*)) == AliasSeq!(Tuple!(int,string,Tuple!(real*,real*)*))));
+}
+
+static class TVariantException : Exception {
+	this (string msg,size_t line = __LINE__,string file = __FILE__) {
+		super(msg,file,line);
 	}
 }
 
@@ -52,6 +154,7 @@ private:
 							== typeof(AliasSeq!(FieldSpec!(None,"x")))));
 	}
 
+	alias allowedSpecs = ReplaceTypeRecurse!(This*,TVariant!Specs*,Specs);
 	alias fieldSpecs = parseSpecs!Specs;
 
 	template TypeSpecs(FieldSpecs...) {
@@ -69,34 +172,33 @@ private:
 		static assert (is (TypeSpecs!specs == AliasSeq!(int,real,string)));
 	}
 
-	template TypeFromTag(string tag,FieldSpecs...) {
+	template IndexFromTag(string tag,FieldSpecs...){
 		static if (FieldSpecs.length == 0) {
-			static assert (0,"this tag : \"" ~ tag ~ "\" is valid" );
+			static assert (0,"this tag : \"" ~ tag ~ "\" is valid");
 		}
-		else static if (FieldSpecs[0].name == tag){
-			alias TypeFromTag = FieldSpecs[0].Type;
+		else static if (FieldSpecs[0].name == tag) {
+			enum IndexFromTag = 0;
 		}
 		else {
-			alias TypeFromTag = TypeFromTag!(tag,FieldSpecs[1..$]);
+			enum IndexFromTag = 1 + IndexFromTag!(tag,FieldSpecs[1..$]);
 		}
 	}
 	unittest {
 		alias specs1 = AliasSeq!(FieldSpec!(int,"x"),FieldSpec!(real,"y"),FieldSpec!(int,"z"));
-		static assert (is (TypeFromTag!("x",specs1) == int));
-		static assert (is (TypeFromTag!("y",specs1) == real));
-		static assert (is (TypeFromTag!("z",specs1) == int));
-
-		alias specs2 = AliasSeq!(FieldSpec!(None,"x"),FieldSpec!(None,"y"),FieldSpec!(None,"z"));
-		static assert (is (TypeFromTag!("x",specs2) == None));
-		static assert (is (TypeFromTag!("y",specs2) == None));
-		static assert (is (TypeFromTag!("z",specs2) == None));
+		static assert (IndexFromTag!("x",specs1) == 0);
+		static assert (IndexFromTag!("y",specs1) == 1);
+		static assert (IndexFromTag!("z",specs1) == 2);
 	}
 public:
 	VariantN!(maxSize!(TypeSpecs!fieldSpecs),TypeSpecs!fieldSpecs) data;
 	@property void opDispatch(string tag,T)(T x) {
-		static if (is(T == TVariant!(Specs)*)) {
-			data = x.data;
-		} else {
+		alias SType = TypeSpecs!(fieldSpecs)[IndexFromTag!(tag,fieldSpecs)];
+		static if (hasT!(This,SType)) {
+			auto targetTypePtr = cast(ReplaceTypeRecurse!(This*,typeof(data)*,SType)[0]*)&x;
+			_tag = tag;
+			data = *targetTypePtr;
+		}
+		else {
 			_tag = tag;
 			data = x;
 		}
@@ -104,7 +206,18 @@ public:
 	@property auto opDispatch(string tag)() {
 		if (_tag != tag)
 			throw new TVariantException("TVariant: attempting to use incompatible tag " ~ tag);
-		return data.get!(TypeFromTag!(tag,fieldSpecs));
+		alias RType = fieldSpecs[IndexFromTag!(tag,fieldSpecs)].Type;
+		static if (is(RType == void)) {
+			pragma(msg,"tag : "~tag~" type is void");
+		}
+		else static if (hasT!(This,RType)){
+			auto r = data.get!(IndexFromTag!(tag,fieldSpecs));
+			auto targetTypePtr = cast(ReplaceTypeRecurse!(This*,typeof(this)*,RType)[0]*)&r;
+			return *targetTypePtr;
+		}
+		else {
+			return data.get!(IndexFromTag!(tag,fieldSpecs));
+		}
 	}
 	@property string tag (){
 		return _tag;
@@ -118,20 +231,8 @@ public:
 }
 
 unittest {
-	TVariant!(int,"x",int,"y",int,"z") tv1;
-	tv1.x = 1;
-	tv1.y = 2;
-	tv1.z = 3;
-	assert (tv1.z == 3);
-
-	TVariant!("x","y","z") tv2;
-	tv2.set!"x";
-	assert (tv2.tag == "x");
-
-	TVariant!(int,"x",double,"y",This*,"This") tv3,tv4;
-	tv3.x = 1;
-	tv3.y = 3.14;
-	
-	tv4.x = 2;
-	tv3.This = &tv4;
+	TVariant!(int,"x",Tuple!(This*,This*),"child") v1,v2,v3;
+	v2.x = 1;
+	v1.child = tuple(&v2,&v3);
+	assert (v1.child[0].x == 1);
 }
