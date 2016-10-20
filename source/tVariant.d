@@ -3,7 +3,7 @@ module tvariant;
 import std.variant : VariantException,VariantN,maxSize,This;
 import std.typecons : Tuple,ReplaceType,tuple,Nullable;
 import std.meta : AliasSeq;
-import std.traits : isPointer,PointerTarget,TemplateArgsOf,TemplateOf,hasMember;
+import std.traits;
 import std.array : replace;
 import std.format : format;
 
@@ -32,6 +32,20 @@ template ReplaceTypeRec(From,To,Types...){
 	else static if (is(Types[0] == From)) {
 		alias ReplaceTypeRec = AliasSeq!(To,ReplaceTypeRec!(From,To,Types[1..$]));
 	}
+	else static if (__traits(isStaticArray,Types[0])) {
+		enum len = Types[0].length;
+		alias Base = ForeachType!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][len],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (__traits(isAssociativeArray,Types[0])) {
+		alias Key = KeyType!(Types[0]);
+		alias Base = ForeachType!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][ReplaceTypeRec!(From,To,Key)[0]],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (isDynamicArray!(Types[0])) {
+		alias Base = ForeachType!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
 	else static if (__traits(compiles,TemplateOf!(Types[0]))) {
 		alias Base = TemplateOf!(Types[0]);
 		alias Args = TemplateArgsOf!(Types[0]);
@@ -44,6 +58,8 @@ template ReplaceTypeRec(From,To,Types...){
 unittest {
 	static assert (is(
 		ReplaceTypeRec!(int,float,AliasSeq!(Tuple!(int*,int),real,int*)) == AliasSeq!(Tuple!(float*,float),real,float*)));
+	static assert (is(
+		ReplaceTypeRec!(int,byte,AliasSeq!(int[int],int[],int[3])) == AliasSeq!(byte[byte],byte[],byte[3])));
 }
 
 struct TVariant(Specs...){
@@ -67,7 +83,7 @@ private:
 		alias Data = __Data;
 	}
 
-	auto this2TVariant(T)(T x) {
+	ref auto this2TVariant(T)(ref T x) {
 		static if (is(ReplaceTypeRec!(This,TVariant!Specs,T)[0] == T)) {
 			return x;
 		}
@@ -77,7 +93,7 @@ private:
 		}
 	}
 
-	auto tVariant2This(T)(T x) {
+	ref auto tVariant2This(T)(ref T x) {
 		static if (is(ReplaceTypeRec!(TVariant!Specs,This,T)[0] == T)) {
 			return x;
 		}
@@ -95,7 +111,11 @@ public:
 	/++
 		Setter
 	+/
-	auto set(string tag,T)(T x) {
+	auto set(string tag)(){
+		_tag = tag;
+	}
+	auto set(string tag)(ReplaceTypeRec!(This,TVariant!Specs,typeof(mixin("data."~tag)))[0] x) {
+		import std.stdio;
 		static assert (__traits(hasMember,typeof(data),tag),format("tag %s is not exist",tag));
 		static assert (is(typeof(mixin("data."~tag)) == typeof(tVariant2This(x))),
 						format("tag : %s type is %s. but argment type is %s",
@@ -107,7 +127,7 @@ public:
 	/++
 		Getter
 	+/
-	auto get(string tag)(){
+	ref auto get(string tag)(){
 		static if (hasMember!(typeof(data),tag)) {
 			if (tag != _tag) {
 				throw new TVariantException(format("Now tag is %s",_tag));
@@ -121,24 +141,17 @@ public:
 	auto opDispatch(string tag,T)(T x) {
 		this.set!tag(x);
 	}
-	auto opDispatch(string tag)() {
-		static if (hasMember!(typeof(data),tag)) {
-			Nullable!(typeof(this2TVariant(mixin("data."~tag)))) r;
-			if (tag == _tag)
-				r = this2TVariant(mixin("data."~tag));
-			return r;
-		}
-		else {
-			static assert (false);
-		}
+	ref auto opDispatch(string tag)() {
+		return get!tag;	
 	}
 }
 
 unittest {
-	TVariant!(int,"x",double,"y",This*,"z") tv1,tv2;
+	import std.stdio;
+	TVariant!(int,"x",double,"y",This*[],"z") tv1,tv2;
 	tv1.y = 3.14;
-	tv2.z = &tv1;
-	assert (tv2.z.y.get == 3.14);
-	assert (tv2.x.isNull);
+	tv2.set!"z";
+	tv2.z ~= &tv1;
+	assert (tv2.z[0].y == 3.14);
 	static assert (!__traits(compiles,tv1.w));
 }
