@@ -112,6 +112,7 @@ public:
 		Setter
 	+/
 	auto set(string tag)(){
+		mixin("data."~tag) = typeof(mixin("data."~tag)).init;
 		_tag = tag;
 	}
 	auto set(string tag)(ReplaceTypeRec!(This,TVariant!Specs,typeof(mixin("data."~tag)))[0] x) {
