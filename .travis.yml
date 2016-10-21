@@ -6,4 +6,4 @@ d:
     - gdc
 
 script:
-	dub test --compiler=${DC}
+    dub test --compiler=${DC}
