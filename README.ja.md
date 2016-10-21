@@ -3,6 +3,7 @@
 D言語でパターンマッチするライブラリです.
 ## Description
 Tuple,Range,Array,Struct,Classなどからなるデータ構造にマッチして分解することが出来ます.
+Tagged Variantを定義しています
 
 ガードを用いてマッチする条件を追加する事も出来ます.
 ## Example
@@ -42,6 +43,23 @@ xs ~ [x]
 ```
 {x : alpha}
 {x : alpha,y : beta}
+```
+#### std.variant.Algebraic and Variant
+```
+x:int
+[x]~xs : real[]
+[x:int[]]~xs
+```
+#### Input Range
+```
+x::xs
+x::y::xs
+```
+#### Tagged Variant
+```
+x:Num
+[x]~xs:Array
+[x:Num]~xs
 ```
 #### Complex
 ```
