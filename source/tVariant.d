@@ -152,10 +152,12 @@ public:
 
 unittest {
 	import std.stdio;
-	TVariant!(int,"x",double,"y",This*[],"z") tv1,tv2;
-	tv1.y = 3.14;
+	TVariant!(float,"x",float,"y",This*[],"z","w") tv1,tv2;
+	tv1.set!"w";
+	assert (tv1.tag == "w");
+	tv1.y = 3.14f;
 	tv2.set!"z";
 	tv2.z ~= &tv1;
-	assert (tv2.z[0].y == 3.14);
-	static assert (!__traits(compiles,tv1.w));
+	assert (tv2.z[0].y == 3.14f);
+	static assert (!__traits(compiles,tv1.a));
 }
