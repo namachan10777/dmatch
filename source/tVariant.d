@@ -108,6 +108,9 @@ private:
 	string _tag;
 
 public:
+	string tag() {
+		return _tag;
+	}
 	/++
 		Setter
 	+/
