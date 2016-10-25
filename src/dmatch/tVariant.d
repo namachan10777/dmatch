@@ -22,6 +22,9 @@ template ReplaceTypeRec(From,To,Types...){
 	static if (Types.length == 0) {
 		alias ReplaceTypeRec = AliasSeq!();
 	}
+	else static if (is(typeof(Types[0]) : string)) {
+		alias ReplaceTypeRec = AliasSeq!(Types[0],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
 	else static if (isPointer!(Types[0])) {
 		alias ReplaceTypeRec =
 			AliasSeq!(
