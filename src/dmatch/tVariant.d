@@ -171,7 +171,7 @@ public:
 	in{
 		static assert (tagExist!(tag,Specs),format("tag %s is not exist",tag));
 		static assert (is(ReplaceTypeRec!(TVariant!Specs,This,T)[0] == TypeFromTag!(tag,Specs))
-						,format("type of tag %s is %s",ReplaceTypeRec!(TVariant!Specs,This,TypeFromTag!(tag,Specs))[0].stringof,T.stringof));
+						,format("type of tag is \'%s\'. but argument type is \'%s\'",TypeFromTag!(tag,Specs).stringof,ReplaceTypeRec!(TVariant!Specs,This,T)[0].stringof));
 	}
 	body{
 		assign(x);
