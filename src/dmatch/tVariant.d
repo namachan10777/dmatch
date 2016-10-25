@@ -1,13 +1,12 @@
 module dmatch.tvariant;
 
-import std.variant : VariantException,VariantN,maxSize,This;
-import std.typecons : Tuple,ReplaceType,tuple,Nullable;
 import std.meta : AliasSeq;
 import std.traits;
-import std.array : replace;
 import std.format : format;
 
 import std.stdio;
+
+public import std.variant : This;
 
 private:
 
@@ -56,6 +55,7 @@ template ReplaceTypeRec(From,To,Types...){
 	}
 }
 unittest {
+	import std.typecons : Tuple;
 	static assert (is(
 		ReplaceTypeRec!(int,float,AliasSeq!(Tuple!(int*,int),real,int*)) == AliasSeq!(Tuple!(float*,float),real,float*)));
 	static assert (is(
