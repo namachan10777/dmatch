@@ -8,63 +8,6 @@ import std.stdio;
 
 public import std.variant : This;
 
-private:
-
-static class TVariantException : Exception {
-	this(string msg,string file = __FILE__,int line = __LINE__) {
-		super (msg,file,line);
-	}
-}
-
-struct None{};
-
-template ReplaceTypeRec(From,To,Types...){
-	static if (Types.length == 0) {
-		alias ReplaceTypeRec = AliasSeq!();
-	}
-	else static if (is(typeof(Types[0]) : string)) {
-		alias ReplaceTypeRec = AliasSeq!(Types[0],ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else static if (isPointer!(Types[0])) {
-		alias ReplaceTypeRec =
-			AliasSeq!(
-				ReplaceTypeRec!(From,To,PointerTarget!(Types[0]))[0]*,
-				ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else static if (is(Types[0] == From)) {
-		alias ReplaceTypeRec = AliasSeq!(To,ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else static if (__traits(isStaticArray,Types[0])) {
-		enum len = Types[0].length;
-		alias Base = ForeachType!(Types[0]);
-		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][len],ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else static if (__traits(isAssociativeArray,Types[0])) {
-		alias Key = KeyType!(Types[0]);
-		alias Base = ForeachType!(Types[0]);
-		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][ReplaceTypeRec!(From,To,Key)[0]],ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else static if (isDynamicArray!(Types[0])) {
-		alias Base = ForeachType!(Types[0]);
-		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][],ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else static if (__traits(compiles,TemplateOf!(Types[0]))) {
-		alias Base = TemplateOf!(Types[0]);
-		alias Args = TemplateArgsOf!(Types[0]);
-		alias ReplaceTypeRec = AliasSeq!(Base!(ReplaceTypeRec!(From,To,Args)),ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-	else {
-		alias ReplaceTypeRec = AliasSeq!(Types[0],ReplaceTypeRec!(From,To,Types[1..$]));
-	}
-}
-unittest {
-	import std.typecons : Tuple;
-	static assert (is(
-		ReplaceTypeRec!(int,float,AliasSeq!(Tuple!(int*,int),real,int*)) == AliasSeq!(Tuple!(float*,float),real,float*)));
-	static assert (is(
-		ReplaceTypeRec!(int,byte,AliasSeq!(int[int],int[],int[3])) == AliasSeq!(byte[byte],byte[],byte[3])));
-}
-
 public:
 
 struct TVariant(Specs...){
@@ -228,4 +171,61 @@ unittest {
 	assert (tv2 != tv1);
 	tv2.x =3.14f;
 	assert (tv2 == tv1);
+}
+
+private:
+
+static class TVariantException : Exception {
+	this(string msg,string file = __FILE__,int line = __LINE__) {
+		super (msg,file,line);
+	}
+}
+
+struct None{};
+
+template ReplaceTypeRec(From,To,Types...){
+	static if (Types.length == 0) {
+		alias ReplaceTypeRec = AliasSeq!();
+	}
+	else static if (is(typeof(Types[0]) : string)) {
+		alias ReplaceTypeRec = AliasSeq!(Types[0],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (isPointer!(Types[0])) {
+		alias ReplaceTypeRec =
+			AliasSeq!(
+				ReplaceTypeRec!(From,To,PointerTarget!(Types[0]))[0]*,
+				ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (is(Types[0] == From)) {
+		alias ReplaceTypeRec = AliasSeq!(To,ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (__traits(isStaticArray,Types[0])) {
+		enum len = Types[0].length;
+		alias Base = ForeachType!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][len],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (__traits(isAssociativeArray,Types[0])) {
+		alias Key = KeyType!(Types[0]);
+		alias Base = ForeachType!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][ReplaceTypeRec!(From,To,Key)[0]],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (isDynamicArray!(Types[0])) {
+		alias Base = ForeachType!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else static if (__traits(compiles,TemplateOf!(Types[0]))) {
+		alias Base = TemplateOf!(Types[0]);
+		alias Args = TemplateArgsOf!(Types[0]);
+		alias ReplaceTypeRec = AliasSeq!(Base!(ReplaceTypeRec!(From,To,Args)),ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+	else {
+		alias ReplaceTypeRec = AliasSeq!(Types[0],ReplaceTypeRec!(From,To,Types[1..$]));
+	}
+}
+unittest {
+	import std.typecons : Tuple;
+	static assert (is(
+		ReplaceTypeRec!(int,float,AliasSeq!(Tuple!(int*,int),real,int*)) == AliasSeq!(Tuple!(float*,float),real,float*)));
+	static assert (is(
+		ReplaceTypeRec!(int,byte,AliasSeq!(int[int],int[],int[3])) == AliasSeq!(byte[byte],byte[],byte[3])));
 }
