@@ -1,4 +1,4 @@
-module dmatch.core.lexer;
+module dmatch.core.parser;
 
 import std.stdio;
 
