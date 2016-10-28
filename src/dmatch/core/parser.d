@@ -62,6 +62,26 @@ unittest {
 	assert (parsed2.shit == "Dman is s" && parsed2.dish == "o cute." && parsed2.succ);
 }
 
+//or : 'f ... -> Arg -> Arg
+Arg or(ps...)(in Arg arg) {
+	static if (ps.length == 1) {
+		auto parsed = ps[0](arg);
+		if (parsed.succ) return parsed;
+		else return arg.failed;
+	}
+	else {
+		auto parsed = ps[0](arg);
+		if (parsed.succ) return parsed;
+		else return or!(ps[1..$])(arg);
+	}
+}
+unittest {
+	assert (Arg("Dman is ","so cute.",true).or!(same!'o',same!'p',same!'s',same!'q')
+		== Arg("Dman is s","o cute.",true));
+	assert (Arg("Dman is ","so cute.",true).or!(same!'a',same!'b',same!'c',same!'d')
+		== Arg("Dman is ","so cute.",false));
+}
+
 //not : 'f -> Arg -> Arg
 //述語fを実行して失敗すれば成功、成功すれば失敗を返す。文字は消費しない
 Arg not(alias p)(in Arg arg) {
