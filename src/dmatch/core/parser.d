@@ -117,8 +117,8 @@ Arg many(alias p)(in Arg arg) {
 //述語fを0回以上実行して常に成功を返す
 Arg rep(alias p)(in Arg arg) {
 	auto parsed = p (arg);
-	if (parsed.succ) rep!p(parsed);
-	else arg;
+	if (parsed.succ) return rep!p(parsed);
+	else return arg;
 }
 
 //opt : 'f -> Arg -> Arg
