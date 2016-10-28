@@ -51,7 +51,7 @@ unittest {
 //指定された文字が含まれていれば成功、無ければ失敗を返す
 Arg rng(alias candidate)(in Arg arg) {
 	foreach(c ; candidate) {
-		if (c == arg.dish[0]) return Arg(arg.shit~arg.dish[0],arg.dish[1..$],true);
+		if (!arg.dish.empty && c == arg.dish[0]) return Arg(arg.shit~arg.dish[0],arg.dish[1..$],true);
 	}
 	return Arg(arg.shit,arg.dish,false);
 }
