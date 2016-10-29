@@ -123,6 +123,13 @@ unittest {
 //many : 'f -> Arg -> Arg
 //一回以上述語fを実行してその結果を返す
 Arg many(alias p)(in Arg arg) {
+	auto parsed = p(arg);
+	if (parsed.succ) return rep!(p)(parsed);
+	else return arg.failed;
+}
+unittest {
+	assert (Arg("Dman is ","so cute.",true).many!(rng!"so") == Arg("Dman is so"," cute.",true));
+	assert (Arg("Dman is ","so cute.",true).many!(rng!"ab") == Arg("Dman is ","so cute.",false));
 }
 
 //rep : 'f -> Arg -> Arg
