@@ -47,6 +47,18 @@ unittest {
 	assert (parsed2 == Arg("Dman is s", "o cute.", true));
 }
 
+Arg str(alias token)(in Arg arg) {
+	size_t idx;
+	foreach(i,head;token) {
+		if (head != arg.dish[i]) return arg.failed;
+		idx = i;
+	}
+	return Arg(arg.shit~arg.dish[0..idx+1],arg.dish[idx+1..$],true);
+}
+unittest {
+	assert (Arg("Dman is ","so cute.",true).str!"so cute" == Arg("Dman is so cute",".",true));
+	assert (Arg("Dman is ","so cute.",true).str!"so cool" == Arg("Dman is ","so cute.",false));
+}
 //rng : char[] -> Arg -> Arg
 //指定された文字が含まれていれば成功、無ければ失敗を返す
 Arg rng(alias candidate)(in Arg arg) {
