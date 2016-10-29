@@ -139,6 +139,10 @@ Arg rep(alias p)(in Arg arg) {
 	if (parsed.succ) return rep!p(parsed);
 	else return arg;
 }
+unittest {
+	assert (Arg("Dman is ","so cute.",true).rep!(rng!"so") == Arg("Dman is so"," cute.",true));
+	assert (Arg("Dman is ","so cute.",true).rep!(rng!"ab") == Arg("Dman is ","so cute.",true));
+}
 
 //opt : 'f -> Arg -> Arg
 //述語fを一回実行して常に成功を返す
