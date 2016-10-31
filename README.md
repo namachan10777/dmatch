@@ -31,7 +31,6 @@ x::[]
 []
 [x]
 [x,_]
-[x,_,...]
 [x] ~ xs
 xs ~ [x]
 ```
@@ -58,9 +57,9 @@ x::y::xs
 ```
 #### Tagged Variant
 ```
-x:Num
-[x]~xs:Array
-[x:Num]~xs
+Num x
+[x]~Array xs
+[Num x]~xs
 ```
 #### Composite
 ```
