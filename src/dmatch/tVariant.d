@@ -101,6 +101,11 @@ private:
 		return *cast(T*)&store;
 	}
 public:
+	static auto create(string tag,T)(T x) {
+		auto tv = new TVariant!Specs;
+		tv.set!(tag,T)(x);
+		return tv;
+	}
 	@property
 	const(string) tag() {
 		return _tag;
