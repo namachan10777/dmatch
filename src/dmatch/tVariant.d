@@ -169,6 +169,7 @@ public:
 unittest {
 	TVariant!(float,"x",float,"y",This*[],"z","w") tv1,tv2;
 	tv1.opDispatch!"x"= 3.14f;
+	tv1.x= 3.14f;
 	tv2.set!"z";
 	tv2.z ~= &tv1;
 	assert (tv2.z[0].x == 3.14f);
