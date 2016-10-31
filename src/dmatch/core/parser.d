@@ -172,3 +172,93 @@ unittest {
 	assert (Src("Dman is ","so cute.").seq!(same!'s',same!'o') == Src("Dman is so"," cute.",true));
 	assert (Src("Dman is ","so cute.").seq!(same!'s',same!'O') == Src("Dman is ","so cute.",false));
 }
+
+//基本的な規則
+//特殊文字
+enum sp = "!\"#$%&'()-=~^|\\{[]}@`*:+;?/.><,";
+alias emp = or!(rng!"\r\t\n ");
+//symbol <- (!(sp / [0-9]) .) (!sp .)
+alias symbol = seq!(seq!(not!(or!(rng!sp,rng!digits)),any),rep!(seq!(not!(rng!sp),any)));
+unittest {
+	assert (Src("i").symbol == Src("i","",true));
+	assert (Src("_Abc_100_!").symbol == Src("_Abc_100_","!",true));
+	assert (Src("0_a").symbol == Src("","0_a",false));
+}
+
+//literal
+
+/+floating <- [0-9]* '.' [0-9]+ ('e' ('+' / '-')? [0-9])? 'f'?
+			/ [0-9]+ '.' [0-9]*
++/
+alias floating = or!(
+		seq!(rep!(rng!digits),same!'.',many!(rng!digits),
+			opt!(seq!(same!'e',opt!(or!(same!'+',same!'-')),rng!digits)),opt!(same!'f')),
+		seq!(many!(rng!digits),same!'.',rep!(rng!digits))
+	);
+unittest {
+	assert (Src("3.14f").floating == Src("3.14f","",true));
+	assert (Src("1.").floating == Src("1.","",true));
+	assert (Src(".1").floating == Src(".1","",true));
+}
+//integral <- "0x" [0-9]+ / [1-9] / [0-9]+ ("LU" / 'L' / 'U')?
+alias integral = seq!(or!(seq!(str!"0x",many!(rng!digits)),many!(rng!digits)),opt!(or!(str!"LU",same!'L',same!'U')));
+unittest {
+	assert (Src("0x12LU").integral == Src("0x12LU","",true));
+}
+alias num = or!(floating,integral);
+
+//strLit <- '"' ("\""? !('"' .))* '"'
+alias strLit = seq!(same!'\"',rep!(seq!(opt!(same!'a'),not!(same!'\"'),any)),same!'\"');
+unittest {
+	assert (Src("\"abc\\\"").strLit == Src("\"abc\\\"","",true));
+}
+//charLit <- ''' '\'? . '''
+alias charLit = seq!(same!'\'',opt!(same!'\\'),any,same!'\'');
+unittest {
+	assert (Src(q{'\r'}).charLit == Src(q{'\r'},"",true));
+}
+
+Src quote(in Src src) {
+	if (src.dish[0..2] == "q{") {
+		auto bracketCnt = 1LU;
+		foreach(i,head;src.dish[2..$]) {
+			if 		(head == '{') ++bracketCnt;
+			else if (head == '}') --bracketCnt;
+			if (bracketCnt == 0) return Src(src.ate~src.dish[0..i+3],src.dish[i+3..$],true);
+		}
+	}
+	return src.failed;
+}
+unittest {
+	assert (Src("q{abc}").quote == Src("q{abc}","",true));
+}
+
+alias literal = or!(num,charLit,strLit);
+
+Src rtest(in Src src) {
+	return seq!(or!(same!'a',seq!(same!'(',rtest,same!')')))(src);
+}
+
+/+
+template_ <- symbol emp* ('!' emp* (symbol / literal / template_)) /
+		('(' emp* (symbol / literal / template_) emp* (',' emp* symbol / literal / template_ emp* )* ')')
++/
+Src template_ (in Src src) {
+	return seq!(symbol,rep!emp,same!'!',rep!emp,or!(
+			or!(symbol,literal),
+			seq!(same!'(',rep!emp,or!(template_,symbol,literal),rep!(seq!(same!',',rep!emp,or!(template_,symbol,literal),rep!emp)),same!')')))(src);
+}
+unittest {
+	assert (Src("Tuple!(Hoge!T,int)").template_ == Src("Tuple!(Hoge!T,int)","",true));
+}
+
+/+
+func <- (template_ / symbol) emp* '(' emp* (literal / symbol) (emp* ',' emp* (literal / symbol))* emp* ')'
++/
+Src func(in Src src) {
+	return seq!(or!(template_,symbol),rep!emp,
+		same!'(',opt!(seq!(rep!emp,or!(literal,func,template_,symbol),rep!(seq!(rep!emp,same!',',rep!emp,or!(literal,func,template_,symbol))),rep!emp)),same!')')(src);
+}
+unittest {
+	assert(Src("foo (hoge!x, 0x12 ,hoge( foo))").func == Src("foo (hoge!x, 0x12 ,hoge( foo))","",true));
+}
