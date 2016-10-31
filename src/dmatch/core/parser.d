@@ -4,6 +4,7 @@ import std.stdio;
 
 import std.typecons : tuple,Tuple;
 import std.range;
+import std.ascii;
 
 struct Src {
 	immutable string ate;

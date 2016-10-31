@@ -30,7 +30,6 @@ x::[]
 []
 [x]
 [x,_]
-[x,_,...]
 [x] ~ xs
 xs ~ [x]
 ```
@@ -65,6 +64,6 @@ Num x
 #### Complex
 ```
 [(x,_)] ~ xs
-{[x,...] : alpha,{z : theta} : beta}
+{[x]~_ : alpha,{z : theta} : beta}
 {Num x : theta}
 ```
