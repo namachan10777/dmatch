@@ -5,172 +5,170 @@ import std.stdio;
 import std.typecons : tuple,Tuple;
 import std.range;
 
-struct Arg {
-	immutable string shit;
+struct Src {
+	immutable string ate;
 	immutable string dish;
 	immutable bool succ;
-	this(immutable string shit,immutable string dish,immutable bool succ) {
-		this.shit = shit;
+	this(immutable string dish) {
+		this("",dish,true);
+	}
+	this(immutable string ate,immutable string dish) {
+		this(ate,dish,true);
+	}
+	this(immutable string ate,immutable string dish,immutable bool succ) {
+		this.ate = ate;
 		this.dish = dish;
 		this.succ = succ;
 	}
 	@property
-	Arg failed() const{
-		return Arg(shit,dish,false);
+	Src failed() const{
+		return Src(ate,dish,false);
 	}
 }
 
 //成功すれば文字を消費し結果(true | false)と一緒に消費した文字を付け加えたものを返す
 
-//any : Arg -> Arg
+//any : Src -> Src
 //任意の一文字を取る。
-Arg any(in Arg arg) {
-	if (arg.dish.empty) return Arg(arg.shit,arg.dish,false);
-	return Arg(arg.shit~arg.dish[0],arg.dish[1..$],true);
+Src any(in Src src) {
+	if (src.dish.empty) return Src(src.ate,src.dish,false);
+	return Src(src.ate~src.dish[0],src.dish[1..$],true);
 }
 unittest {
-	auto r = Arg("Dman is", " so cute.", true).any.any.any.any;
-	assert (r.shit == "Dman is so " && r.dish == "cute." && r.succ);
+	auto r = Src("Dman is", " so cute.", true).any.any.any.any;
+	assert (r.ate == "Dman is so " && r.dish == "cute." && r.succ);
 }
 
-//same : Arg -> char -> Arg
-Arg same(alias charcter)(in Arg arg) {
-	if (!arg.dish.empty && arg.dish.front == charcter) {
-		return Arg(arg.shit~arg.dish[0],arg.dish[1..$],true);
+//same : Src -> char -> Src
+Src same(alias charcter)(in Src src) {
+	if (!src.dish.empty && src.dish.front == charcter) {
+		return Src(src.ate~src.dish[0],src.dish[1..$],true);
 	}
-	return Arg(arg.shit,arg.dish,false);
+	return Src(src.ate,src.dish,false);
 }
 unittest {
-	auto parsed1 = Arg("Dman is ", "so cute.", true).same!'a';
-	assert (parsed1 == Arg("Dman is ", "so cute.", false));
-	auto parsed2 = Arg("Dman is ", "so cute.", true).same!'s';
-	assert (parsed2 == Arg("Dman is s", "o cute.", true));
+	assert (Src("Dman is ", "so cute.").same!'a' == Src("Dman is ", "so cute.", false));
+	assert (Src("Dman is ", "so cute.").same!'s' == Src("Dman is s", "o cute.", true));
 }
 
-Arg str(alias token)(in Arg arg) {
+Src str(alias token)(in Src src) {
 	size_t idx;
 	foreach(i,head;token) {
-		if (head != arg.dish[i]) return arg.failed;
+		if (head != src.dish[i]) return src.failed;
 		idx = i;
 	}
-	return Arg(arg.shit~arg.dish[0..idx+1],arg.dish[idx+1..$],true);
+	return Src(src.ate~src.dish[0..idx+1],src.dish[idx+1..$],true);
 }
 unittest {
-	assert (Arg("Dman is ","so cute.",true).str!"so cute" == Arg("Dman is so cute",".",true));
-	assert (Arg("Dman is ","so cute.",true).str!"so cool" == Arg("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").str!"so cute" == Src("Dman is so cute",".",true));
+	assert (Src("Dman is ","so cute.").str!"so cool" == Src("Dman is ","so cute.",false));
 }
-//rng : char[] -> Arg -> Arg
+//rng : char[] -> Src -> Src
 //指定された文字が含まれていれば成功、無ければ失敗を返す
-Arg rng(alias candidate)(in Arg arg) {
+Src rng(alias candidate)(in Src src) {
 	foreach(c ; candidate) {
-		if (!arg.dish.empty && c == arg.dish[0]) return Arg(arg.shit~arg.dish[0],arg.dish[1..$],true);
+		if (!src.dish.empty && c == src.dish[0]) return Src(src.ate~src.dish[0],src.dish[1..$],true);
 	}
-	return Arg(arg.shit,arg.dish,false);
+	return Src(src.ate,src.dish,false);
 }
 unittest {
-	auto parsed1 = Arg("Dman is ", "so cute.", true).rng!(['a','b','c']);
-	assert (parsed1.shit == "Dman is " && parsed1.dish == "so cute." && !parsed1.succ);
-	auto parsed2 = Arg("Dman is ", "so cute.", true).rng!(['o','p','s']);
-	assert (parsed2.shit == "Dman is s" && parsed2.dish == "o cute." && parsed2.succ);
+	assert (Src("Dman is ", "so cute.").rng!(['a','b','c']) == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ", "so cute.").rng!(['o','p','s']) == Src("Dman is s","o cute.",true));
 }
 
-//or : 'f ... -> Arg -> Arg
-Arg or(ps...)(in Arg arg) {
+//or : 'f ... -> Src -> Src
+Src or(ps...)(in Src src) {
 	static if (ps.length == 1) {
-		auto parsed = ps[0](arg);
+		auto parsed = ps[0](src);
 		if (parsed.succ) return parsed;
-		else return arg.failed;
+		else return src.failed;
 	}
 	else {
-		auto parsed = ps[0](arg);
+		auto parsed = ps[0](src);
 		if (parsed.succ) return parsed;
-		else return or!(ps[1..$])(arg);
+		else return or!(ps[1..$])(src);
 	}
 }
 unittest {
-	assert (Arg("Dman is ","so cute.",true).or!(same!'o',same!'p',same!'s',same!'q')
-		== Arg("Dman is s","o cute.",true));
-	assert (Arg("Dman is ","so cute.",true).or!(same!'a',same!'b',same!'c',same!'d')
-		== Arg("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").or!(same!'o',same!'p',same!'s',same!'q')
+		== Src("Dman is s","o cute.",true));
+	assert (Src("Dman is ","so cute.").or!(same!'a',same!'b',same!'c',same!'d')
+		== Src("Dman is ","so cute.",false));
 }
 
-//not : 'f -> Arg -> Arg
+//not : 'f -> Src -> Src
 //述語fを実行して失敗すれば成功、成功すれば失敗を返す。文字は消費しない
-Arg not(alias p)(in Arg arg) {
-	auto parsed = p (arg);
-	return Arg(arg.shit,arg.dish,!parsed.succ);
+Src not(alias p)(in Src src) {
+	auto parsed = p (src);
+	return Src(src.ate,src.dish,!parsed.succ);
 }
 unittest {
-	auto parsed1 = Arg("Dman is ","so cute.",true).not!(same!'s');
-	assert (parsed1 == Arg("Dman is ","so cute.",false));
-	auto parsed2 = Arg("Dman is ","so cute.",true).not!(same!'a');
-	assert (parsed2 == Arg("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").not!(same!'s') == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").not!(same!'a') == Src("Dman is ","so cute.",true));
 }
 
-//and : 'f -> Arg -> Arg
+//and : 'f -> Src -> Src
 //述語fを実行してその結果を返す。文字は消費しない
-Arg and(alias p)(in Arg arg) {
-	auto parsed = p (arg);
-	return Arg(arg.shit,arg.dish,parsed.succ);
+Src and(alias p)(in Src src) {
+	auto parsed = p (src);
+	return Src(src.ate,src.dish,parsed.succ);
 }
 unittest {
-	auto parsed1 = Arg("Dman is ","so cute.",true).and!(same!'s');
-	assert (parsed1 == Arg("Dman is ","so cute.",true));
-	auto parsed2 = Arg("Dman is ","so cute.",true).and!(same!'a');
-	assert (parsed2 == Arg("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").and!(same!'s') == Src("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").and!(same!'a') == Src("Dman is ","so cute.",false));
 }
 
-//many : 'f -> Arg -> Arg
+//many : 'f -> Src -> Src
 //一回以上述語fを実行してその結果を返す
-Arg many(alias p)(in Arg arg) {
-	auto parsed = p(arg);
+Src many(alias p)(in Src src) {
+	auto parsed = p(src);
 	if (parsed.succ) return rep!(p)(parsed);
-	else return arg.failed;
+	else return src.failed;
 }
 unittest {
-	assert (Arg("Dman is ","so cute.",true).many!(rng!"so") == Arg("Dman is so"," cute.",true));
-	assert (Arg("Dman is ","so cute.",true).many!(rng!"ab") == Arg("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").many!(rng!"so") == Src("Dman is so"," cute.",true));
+	assert (Src("Dman is ","so cute.").many!(rng!"ab") == Src("Dman is ","so cute.",false));
 }
 
-//rep : 'f -> Arg -> Arg
+//rep : 'f -> Src -> Src
 //述語fを0回以上実行して常に成功を返す
-Arg rep(alias p)(in Arg arg) {
-	auto parsed = p (arg);
+Src rep(alias p)(in Src src) {
+	auto parsed = p (src);
 	if (parsed.succ) return rep!p(parsed);
-	else return arg;
+	else return src;
 }
 unittest {
-	assert (Arg("Dman is ","so cute.",true).rep!(rng!"so") == Arg("Dman is so"," cute.",true));
-	assert (Arg("Dman is ","so cute.",true).rep!(rng!"ab") == Arg("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").rep!(rng!"so") == Src("Dman is so"," cute.",true));
+	assert (Src("Dman is ","so cute.").rep!(rng!"ab") == Src("Dman is ","so cute.",true));
 }
 
-//opt : 'f -> Arg -> Arg
+//opt : 'f -> Src -> Src
 //述語fを一回実行して常に成功を返す
-Arg opt(alias p)(in Arg arg) {
-	auto parsed = p (arg);
-	return Arg(parsed.shit, parsed.dish, true);
+Src opt(alias p)(in Src src) {
+	auto parsed = p (src);
+	return Src(parsed.ate, parsed.dish, true);
 }
 unittest {
-	assert (Arg("Dman is ","so cute.",true).opt!(same!'s') == Arg("Dman is s","o cute.",true));
-	assert (Arg("Dman is ","so cute.",true).opt!(same!'a') == Arg("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").opt!(same!'s') == Src("Dman is s","o cute.",true));
+	assert (Src("Dman is ","so cute.").opt!(same!'a') == Src("Dman is ","so cute.",true));
 }
 
-//seq : 'f... -> Arg -> Arg
+//seq : 'f... -> Src -> Src
 //述語f...を左から順に実行して結果を返す。バックトラックする。
-Arg seq(ps...)(in Arg arg) {
-	Arg seq_impl(ps...)(in Arg init,in Arg arg) {
+Src seq(ps...)(in Src src) {
+	Src seq_impl(ps...)(in Src init,in Src src) {
 		static if (ps.length == 0) {
-			return arg;
+			return src;
 		}
 		else {
-			auto parsed = ps[0](arg);
+			auto parsed = ps[0](src);
 			if (parsed.succ) return seq_impl!(ps[1..$])(init,parsed);
 			else return init.failed;
 		}
 	}
-	return seq_impl!ps(arg,arg);
+	return seq_impl!ps(src,src);
 }
 unittest {
-	assert (Arg("Dman is ","so cute.",true).seq!(same!'s',same!'o') == Arg("Dman is so"," cute.",true));
-	assert (Arg("Dman is ","so cute.",true).seq!(same!'s',same!'O') == Arg("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").seq!(same!'s',same!'o') == Src("Dman is so"," cute.",true));
+	assert (Src("Dman is ","so cute.").seq!(same!'s',same!'O') == Src("Dman is ","so cute.",false));
 }
