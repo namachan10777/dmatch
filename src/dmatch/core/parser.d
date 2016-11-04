@@ -347,10 +347,10 @@ debug{
 
 //基本的な規則
 //特殊文字
-enum sp = "!\"#$%&'()-=~^|\\{[]}@`*:+;?/.><,";
-alias emp = or!(rng!"\r\t\n ");
+alias emp = rep!(or!(rng!"\r\t\n "));
+alias sp = rng!("!\"#$%&'()-=~^|\\{[]}@`*:+;?/.><, \t\n\r");
 //symbol <- (!(sp / [0-9]) .) (!sp .)
-alias symbol = seq!(seq!(not!(or!(rng!sp,rng!digits)),any),rep!(seq!(not!(rng!sp),any)));
+alias symbol = seq!(seq!(not!(or!(sp,rng!digits)),any),rep!(seq!(not!sp,any)));
 unittest {
 	assert (Src("i").symbol == Src("i","",true));
 	assert (Src("_Abc_100_!").symbol == Src("_Abc_100_","!",true));
