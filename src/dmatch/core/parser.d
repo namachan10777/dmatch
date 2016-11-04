@@ -11,7 +11,11 @@ import dmatch.tvariant;
 
 enum NodeType {
 	Root,
-	Bind
+	Bind,
+	RVal,
+	As,
+	Array,
+	Array_Elem
 }
 
 struct Src {
@@ -429,4 +433,71 @@ func <- (template_ / symbol) emp* '(' emp* (literal / symbol) (emp* ',' emp* (li
 }
 unittest {
 	assert(Src("foo (hoge!x, 0x12 ,hoge(foo))").func == Src("foo (hoge!x, 0x12 ,hoge(foo))","",true));
+}
+/+
+pattern <- bind
++/
+alias pattern = or!(as,bind,rVal);
+/+
+bind <- symbol
++/
+//alias bind = sel!(NodeType.Bind,symbol);
+Src bind(Src src) {
+	return sel!(NodeType.Bind,symbol)(src);
+}
+unittest{
+	auto tree = Src("","__abc123",true,new AST(NodeType.Root,"")).bind.tree;
+	assert (tree.children[0].type == NodeType.Bind && tree.children[0].data == "__abc123");
+}
+Src rVal(Src src) {
+	return sel!(NodeType.RVal,or!(literal,func))(src);
+}
+unittest{
+	auto tree = Src("","func(12.3)",true,new AST(NodeType.Root,"")).rVal.tree;
+	assert (tree.children[0].type == NodeType.RVal && tree.children[0].data == "func(12.3)");
+}
+/+
+pattern @ pattern @ pattern
+as <- pattern emp* ('@' pattern emp*)+
++/
+//alias as = node!(NodeType.As,seq!(pattern,many!(emp,same!'@',emp,pattern)));
+alias pattern4as = or!(bind);
+Src as(Src src) {
+	return node!(NodeType.As,seq!(pattern4as,omit!emp,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern4as))))(src);
+}
+unittest {
+	auto tree = Src("","foo @ bar @ hoge",true,new AST(NodeType.Root,""))
+				.as
+				.tree
+				.children[0];
+	assert (tree.type == NodeType.As &&
+			tree.data == "" &&
+			tree.children[0].type == NodeType.Bind &&
+			tree.children[0].data == "foo" &&
+			tree.children[1].type == NodeType.Bind &&
+			tree.children[1].data == "bar" &&
+			tree.children[2].type == NodeType.Bind &&
+			tree.children[2].data == "hoge");
+}
+/+
+[pattern,pattern,pattern]
+array_elem <- [emp* pattern emp* (',' pattern emp*)*]
++/
+Src array_elem(Src src) {
+	return node!(NodeType.Array_Elem,seq!(omit!(seq!(same!'[',emp)),pattern,omit!emp,rep!(seq!(omit!(same!','),pattern,omit!(emp))),omit!(same!']')))(src);
+}
+unittest{
+	auto tree = Src("","[abc@def,b,10]",true,new AST(NodeType.Root,"")).array_elem.tree;
+}
+/+
+array_elem ~ array_elem ~ bind
+array <- (array_elem / bind) ('~' (array_elem / bind))+
++/
+Src array(Src src) {
+	return node!(NodeType.Array,seq!(or!(bind,array_elem),omit!emp,rep!(seq!(omit!(seq!(emp,same!'~',emp)),or!(bind,array_elem)))))(src);
+}
+unittest{
+	auto parsed = Src("","[b,10]~xs",true,new AST(NodeType.Root,"")).array;
+	parsed.writeln;
+	parsed.tree.print_tree;
 }
