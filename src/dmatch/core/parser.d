@@ -18,54 +18,66 @@ struct Src {
 	immutable string ate;
 	immutable string dish;
 	immutable bool succ;
-	immutable AST tree;
-	pure this(immutable string dish) nothrow{
+	AST tree;
+	this(immutable string dish){
 		this("",dish,true,null);
 	}
-	pure this(immutable string dish,immutable AST ast) nothrow{
+	this(immutable string dish,AST ast){
 		this("",dish,true,ast);
 	}
-	pure this(immutable string ate,immutable string dish) nothrow{
+	this(immutable string ate,immutable string dish){
 		this(ate,dish,true,null);
 	}
-	pure this(immutable string ate,immutable string dish,immutable bool succ) nothrow{
+	this(immutable string ate,immutable string dish,immutable bool succ){
 		this(ate,dish,succ,null);
 	}
-	pure this(immutable string ate,immutable string dish,immutable bool succ,immutable AST ast) nothrow{
+	this(immutable string ate,immutable string dish,immutable bool succ,AST ast){
 		this.ate = ate;
 		this.dish = dish;
 		this.succ = succ;
 		this.tree = ast;
 	}
 	@property
-	pure immutable(Src) failed() immutable nothrow{
+	Src failed(){
 		return Src(ate,dish,false,tree);
 	}
 }
 
 class AST {
 public:
-	immutable NodeType type;
-	immutable string data;
-	immutable AST[] children;
-	immutable AST parent;
-	pure this (immutable NodeType type,immutable string data) nothrow{
+	NodeType type;
+	AST parent;
+	string data;
+	AST[] children;
+	this (NodeType type,string data) {
 		this(type,data,null,null);
 	}
-	pure this (immutable NodeType type,immutable string data,immutable AST parent,immutable AST[] children) nothrow{
+	this (NodeType type,string data,AST parent,AST[] children) {
 		this.type = type;
 		this.data = data;
 		this.parent = parent;
 		this.children = children;
 	}
-	pure immutable(AST) childrenAdded(immutable AST[] children) immutable nothrow{
-		return cast(immutable)new AST(type,data,parent,this.children ~ children);
+	AST addChild(AST child)
+	in{
+		assert (child !is null);
 	}
-	pure immutable(AST) dataChanged(immutable string data) immutable nothrow{
-		return cast(immutable)new AST(type,data,parent,children);
+	body
+	{
+		child.parent = this;	
+		this.children ~= child;
+		return this;
+	}
+	AST deleteChild() {
+		--children.length;
+		return this;
+	}
+	AST dataChange(string data) {
+		this.data = data;
+		return this;
 	}
 	@property
-	pure immutable(AST) root() immutable nothrow{
+	AST root(){
 		if (parent is null)
 			return this;
 		else
@@ -78,7 +90,7 @@ public:
 
 //any : Src -> Src
 //任意の一文字を取る。
-pure immutable(Src) any(immutable Src src) nothrow{
+ Src any(Src src) {
 	if (src.dish.empty)
 		return Src(src.ate,src.dish,false,src.tree);
 	return Src(src.ate~src.dish[0],src.dish[1..$],true,src.tree);
@@ -89,7 +101,7 @@ unittest {
 }
 
 //same : Src -> char -> Src
-pure immutable(Src) same(alias charcter)(immutable Src src) nothrow{
+Src same(alias charcter)(Src src) {
 	if (!src.dish.empty && src.dish[0] == charcter) {
 		return Src(src.ate~src.dish[0],src.dish[1..$],true,src.tree);
 	}
@@ -100,7 +112,7 @@ unittest {
 	assert (Src("Dman is ", "so cute.").same!'s' == Src("Dman is s", "o cute.", true));
 }
 
-pure immutable(Src) str(alias token)(immutable Src src) nothrow{
+ Src str(alias token)(Src src) {
 	size_t idx;
 	foreach(i,head;token) {
 		if (src.dish.length <= i ||  head != src.dish[i])
@@ -116,7 +128,7 @@ unittest {
 
 //rng : char[] -> Src -> Src
 //指定された文字が含まれていれば成功、無ければ失敗を返す
-pure immutable(Src) rng(alias candidate)(immutable Src src) nothrow{
+ Src rng(alias candidate)(Src src) {
 	if (!src.dish.empty)
 		foreach(c ; candidate) 
 			if (c == src.dish[0])
@@ -129,14 +141,14 @@ unittest {
 }
 
 //or : 'f ... -> Src -> Src
-pure immutable(Src) or(ps...)(immutable Src src) nothrow{
+ Src or(ps...)(Src src) {
 	static if (ps.length == 1) {
-		immutable parsed = ps[0](src);
+		auto parsed = ps[0](src);
 		if (parsed.succ) return parsed;
 		else return src.failed;
 	}
 	else {
-		immutable parsed = ps[0](src);
+		auto parsed = ps[0](src);
 		if (parsed.succ) return parsed;
 		else return or!(ps[1..$])(src);
 	}
@@ -150,8 +162,8 @@ unittest {
 
 //not : 'f -> Src -> Src
 //述語fを実行して失敗すれば成功、成功すれば失敗を返す。文字は消費しない
-pure immutable(Src) not(alias p)(immutable Src src) nothrow{
-	immutable parsed = p (src);
+ Src not(alias p)(Src src) {
+	auto parsed = p (src);
 	return Src(src.ate,src.dish,!parsed.succ);
 }
 unittest {
@@ -161,8 +173,8 @@ unittest {
 
 //and : 'f -> Src -> Src
 //述語fを実行してその結果を返す。文字は消費しない
-pure immutable(Src) and(alias p)(immutable Src src) nothrow{
-	immutable parsed = p (src);
+ Src and(alias p)(Src src) {
+	auto parsed = p (src);
 	return Src(src.ate,src.dish,parsed.succ);
 }
 unittest {
@@ -172,8 +184,8 @@ unittest {
 
 //many : 'f -> Src -> Src
 //一回以上述語fを実行してその結果を返す
-pure immutable(Src) many(alias p)(immutable Src src) nothrow{
-	immutable parsed = p(src);
+ Src many(alias p)(Src src) {
+	auto parsed = p(src);
 	if (parsed.succ) return rep!(p)(parsed);
 	else return src.failed;
 }
@@ -184,8 +196,8 @@ unittest {
 
 //rep : 'f -> Src -> Src
 //述語fを0回以上実行して常に成功を返す
-pure immutable(Src) rep(alias p)(immutable Src src) nothrow{
-	immutable parsed = p (src);
+ Src rep(alias p)(Src src) {
+	auto parsed = p (src);
 	if (parsed.succ) return rep!p(parsed);
 	else return src;
 }
@@ -196,8 +208,8 @@ unittest {
 
 //opt : 'f -> Src -> Src
 //述語fを一回実行して常に成功を返す
-pure immutable(Src) opt(alias p)(immutable(Src) src) nothrow{
-	immutable parsed = p (src);
+ Src opt(alias p)(Src src) {
+	auto parsed = p (src);
 	return Src(parsed.ate, parsed.dish, true);
 }
 unittest {
@@ -207,13 +219,13 @@ unittest {
 
 //seq : 'f... -> Src -> Src
 //述語f...を左から順に実行して結果を返す。バックトラックする。
-pure immutable(Src) seq(ps...)(immutable Src src) nothrow{
-	immutable(Src) seq_impl(ps...)(immutable Src init,immutable Src src) {
+ Src seq(ps...)(Src src) {
+	Src seq_impl(ps...)(Src init,Src src) {
 		static if (ps.length == 0) {
 			return src;
 		}
 		else {
-			immutable parsed = ps[0](src);
+			auto parsed = ps[0](src);
 			if (parsed.succ) return seq_impl!(ps[1..$])(init,parsed);
 			else return init.failed;
 		}
@@ -226,71 +238,104 @@ unittest {
 }
 
 //ateを捨てる
-pure immutable(Src) omit(alias p)(immutable Src src) nothrow{
-	immutable parsed = p (src);
-	return Src("",parsed.dish,parsed.succ,parsed.tree);
+ Src omit(alias p)(Src src) {
+ 	auto before_size = src.ate.length;
+	auto parsed = p (src);
+	return Src(parsed.ate[0..before_size],parsed.dish,parsed.succ,parsed.tree);
+}
+unittest {
+	assert(Src("","c",true).omit!(same!'c') == Src("","",true));
+	assert(Src("ab","cd",true).omit!(same!'c') == Src("ab","d",true));
+	assert(Src("ab","cd").omit!(same!'e') == Src("ab","cd",false));
+	assert(Src("a  b").seq!(same!'a',omit!emp,same!'b') == Src("ab","",true));
 }
 
 //解析が成功した場合子を作りそれを親とする
-pure immutable(Src) node(NodeType type,alias p)(immutable Src src) nothrow{
-	//新しいノードとなる子要素を現在のノードに追加する
-	immutable parent = src.tree.childrenAdded(cast(immutable)[new AST(type,"")]);
-	//使いされた新しいノード
-	immutable target = Src(src.ate,src.dish,src.succ,parent.children[$-1]);
-
-	immutable parsed = p (target);
+ Src node(NodeType type,alias p)(Src src)
+in{
+	assert(src.tree !is null);
+}
+body{
+	auto new_node = new AST(type,"");
+	src.tree.addChild(new_node);
+	auto parsed = p (Src(src.ate,src.dish,src.succ,new_node));
 	if (parsed.succ) {
-		return parsed;
+		return Src(parsed.ate,parsed.dish,true,src.tree);
 	}
 	else {
+		src.tree.deleteChild;
 		//パース結果を全て破棄する
 		return src.failed;
 	}
 }
 unittest{
-	immutable src = Src("","ab",true,cast(immutable)new AST(NodeType.Root,""))
-					.node!(NodeType.Root,seq!(raise!(same!'a'),sel!(NodeType.Bind,same!'b')));
-	assert (src.tree.data == "a" && src.tree.children[0].data == "b" && src.tree.children[0].type == NodeType.Bind);
+	auto tree = Src("","abc",true,new AST(NodeType.Root,""))
+					.node!(NodeType.Root,seq!(raise!(same!'a'),sel!(NodeType.Bind,same!'b'),sel!(NodeType.Bind,same!'c')))
+					.tree
+					.children[0];
+	assert (tree.data == "a" &&
+			tree.children[0].data == "b" &&
+			tree.children[0].type == NodeType.Bind &&
+			tree.children[1].data == "c" &&
+			tree.children[1].type == NodeType.Bind);
+	auto tree2 = Src("","ab",true,new AST(NodeType.Root,""))
+					.node!(NodeType.Root,seq!(raise!(same!'a'),sel!(NodeType.Bind,same!'b'),sel!(NodeType.Bind,same!'c')))
+					.tree;
+	assert (tree2.data == "" &&
+			tree2.children.empty);
 }
 
 //解析が成功した場合に子を追加する
-pure immutable(Src) sel(NodeType type,alias p)(immutable(Src) src) nothrow{
-	immutable parsed = p (src);
+Src sel(NodeType type,alias p)(Src src)
+in{
+	assert (src.tree !is null);
+}
+body{
+	auto parsed = p (src);
 	if (parsed.succ) {
 		//子を追加したノードを新しいノードとするSrcを返す(=ノードに子要素を追加する)
-		return Src("",parsed.dish,parsed.succ,parsed.tree.childrenAdded(cast(immutable)[new AST(type,parsed.ate)]));
+		src.tree.addChild(new AST(type,parsed.ate));
+		return Src("",parsed.dish,true,src.tree);
 	}
 	else {
 		return parsed;
 	}
 }
 unittest {
-	immutable src = Src("","a",true,cast(immutable)new AST(NodeType.Root,""))
-					.sel!(NodeType.Bind,same!'a');
-	immutable child = src.tree.children[0];
-	assert (src.succ && child.type == NodeType.Bind && child.data == "a");
+	auto tree = Src("","012",true,new AST(NodeType.Root,""))
+					.node!(NodeType.Root,rep!(sel!(NodeType.Bind,rng!digits)))
+					.tree
+					.children[0];
+	assert (tree.data == "" &&
+			tree.type == NodeType.Root &&
+			tree.children[0].data == "0" &&
+			tree.children[0].type == NodeType.Bind &&
+			tree.children[1].data == "1" &&
+			tree.children[1].type == NodeType.Bind &&
+			tree.children[2].data == "2" &&
+			tree.children[2].type == NodeType.Bind);
 }
 
 //親のデータを解析結果に変更する
-pure immutable(Src) raise(alias p)(immutable Src src) nothrow{
-	immutable parsed = p (src);
+ Src raise(alias p)(Src src) {
+	auto parsed = p (src);
 	if (parsed.succ) {
 		//親(現在のノード)のデータを変更したもの
-		immutable parent = parsed.tree.dataChanged(parsed.ate);
+		parsed.tree.dataChange(parsed.ate);
 		//を返す
-		return Src("",parsed.dish,parsed.succ,parent);
+		return Src("",parsed.dish,parsed.succ,parsed.tree);
 	}
 	else {
 		return src.failed;
 	}
 }
 unittest {
-	immutable src = Src("","a",true,cast(immutable)new AST(NodeType.Root,""))
+	auto src = Src("","a",true,new AST(NodeType.Root,""))
 					.raise!(same!'a');
 	assert (src.succ && src.tree.data == "a");
 }
 debug{
-	void print_tree(immutable(AST) ast,string indent = "") {
+	void print_tree(AST ast,string indent = "") {
 		import std.format;
 		writeln(indent,format("%s : %s",ast.data,ast.type));
 		if (ast.children.length > 0) {
@@ -345,7 +390,7 @@ unittest {
 	assert (Src(q{'\r'}).charLit == Src(q{'\r'},"",true));
 }
 
-pure immutable(Src) quote(immutable Src src) nothrow{
+ Src quote(Src src) {
 	if (src.dish[0..2] == "q{") {
 		auto bracketCnt = 1LU;
 		foreach(i,head;src.dish[2..$]) {
@@ -366,10 +411,10 @@ alias literal = or!(num,charLit,strLit);
 template_ <- symbol emp* ('!' emp* (symbol / literal / template_)) /
 		('(' emp* (symbol / literal / template_) emp* (',' emp* symbol / literal / template_ emp* )* ')')
 +/
-pure immutable(Src) template_ (immutable Src src) nothrow{
-	return seq!(symbol,rep!emp,same!'!',rep!emp,or!(
+ Src template_ (Src src) {
+	return seq!(symbol,emp,same!'!',emp,or!(
 			or!(symbol,literal),
-			seq!(same!'(',rep!emp,or!(template_,symbol,literal),rep!(seq!(same!',',rep!emp,or!(template_,symbol,literal),rep!emp)),same!')')))(src);
+			seq!(same!'(',emp,or!(template_,symbol,literal),rep!(seq!(same!',',emp,or!(template_,symbol,literal),emp)),same!')')))(src);
 }
 unittest {
 	assert (Src("Tuple!(Hoge!T,int)").template_ == Src("Tuple!(Hoge!T,int)","",true));
@@ -378,10 +423,10 @@ unittest {
 /+
 func <- (template_ / symbol) emp* '(' emp* (literal / symbol) (emp* ',' emp* (literal / symbol))* emp* ')'
 +/
-pure immutable(Src) func(immutable Src src) nothrow{
-	return seq!(or!(template_,symbol),rep!emp,
-		same!'(',opt!(seq!(rep!emp,or!(literal,func,template_,symbol),rep!(seq!(rep!emp,same!',',rep!emp,or!(literal,func,template_,symbol))),rep!emp)),same!')')(src);
+ Src func(Src src) {
+	return seq!(or!(template_,symbol),emp,emp,
+		same!'(',opt!(seq!(emp,or!(literal,func,template_,symbol),rep!(seq!(emp,same!',',emp,or!(literal,func,template_,symbol))),emp)),same!')')(src);
 }
 unittest {
-	assert(Src("foo (hoge!x, 0x12 ,hoge( foo))").func == Src("foo (hoge!x, 0x12 ,hoge( foo))","",true));
+	assert(Src("foo (hoge!x, 0x12 ,hoge(foo))").func == Src("foo (hoge!x, 0x12 ,hoge(foo))","",true));
 }
