@@ -41,8 +41,8 @@ xs ~ [x]
 ```
 #### Class and Struct
 ```
-{x : alpha}
-{x : alpha,y : beta}
+{x = alpha}
+{x = alpha,y = beta}
 ```
 #### std.variant.Algebraic and Variant
 ```
@@ -57,9 +57,9 @@ x::y::xs
 ```
 #### Tagged Variant
 ```
-Num x
-[x]~Array xs
-[Num x]~xs
+x:Num
+[x]~xs:Array
+[x:Num]~xs
 ```
 #### Complex
 ```

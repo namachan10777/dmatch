@@ -20,6 +20,7 @@ int add_all(int[] list){
 }
 ```
 ### sample pattern
+
 #### InputRange
 ```
 x::xs
@@ -34,6 +35,7 @@ x::[]
 [x] ~ xs
 xs ~ [x]
 ```
+
 #### Tuple
 ```
 (x,y)
@@ -41,8 +43,8 @@ xs ~ [x]
 ```
 #### Class and Struct
 ```
-{x : alpha}
-{x : alpha,y : beta}
+{x = alpha}
+{x = alpha,y = beta}
 ```
 #### std.variant.Algebraic and Variant
 ```
@@ -57,12 +59,13 @@ x::y::xs
 ```
 #### Tagged Variant
 ```
-Num x
-[x]~Array xs
-[Num x]~xs
+x:Num
+[x]~xs:Array
+[x:Num]~xs
 ```
-#### Composite
+#### Complex
 ```
 [(x,_)] ~ xs
-{[x,...] : alpha,{z : theta} : beta}
+{[x]~_ : alpha,{z : theta} : beta}
+{Num x : theta}
 ```
