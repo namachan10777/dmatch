@@ -18,7 +18,13 @@ enum NodeType {
 	As,
 	Array,
 	Array_Elem,
-	Tuple
+	Tuple,
+	Empty,
+	Range,
+	Record,
+	Pair,
+	If,
+	Variant
 }
 
 struct Src {
@@ -379,16 +385,41 @@ alias bind_p = term!(NodeType.Bind,symbol);
 unittest {
 }
 
+//if (/+この部分+/)　を抜き出す
+immutable(Src) withdraw(immutable Src src) {
+	size_t cnt;
+	bool found_begin;
+	size_t begin;
+	with (src) {
+		foreach(i,head;dish) {
+			if      (head == '('){ ++cnt; found_begin = true;begin = i;}
+			else if (head == ')')  --cnt;
+			if (found_begin && cnt == 0) {
+				return Src(dish[begin+1..i],dish[i+1..$],true,trees,stack);
+			}
+		}
+		return failed;
+	}
+}
+immutable(Src) guard_p (immutable Src src) {
+	auto parsed = src.term!(NodeType.If,seq!(omit!(str!"if"),omit!emp,withdraw));
+	if (parsed.succ) return parsed;
+	else return src.failed;
+}
+unittest {
+	Src("if (a == 10)").guard_p.trees[0].print_trees;
+}
+
 immutable(Src) as_p(immutable Src src) {
-	alias pattern = or!(array_p,bind_p);
+	alias pattern = or!(array_p,tuple_p,bracket_p,variant_p,bind_p);
 	return src.node!(NodeType.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
 }
 unittest {
 }
 
 immutable(Src) array_elem_p(immutable Src src) {
-	alias pattern = or!(as_p,array_p,bind_p);
-	return src.node!(NodeType.Array_Elem,seq!(omit!(same!'['),omit!emp,pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp,omit!(same!']')));
+	alias pattern = or!(as_p,array_p,bracket_p,bind_p,);
+	return src.node!(NodeType.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp)),omit!(same!']')));
 }
 unittest {
 }
@@ -403,8 +434,42 @@ unittest {
 }
 
 immutable(Src) tuple_p(immutable Src src) {
-	alias pattern = or!(as_p,array_p,bind_p);
+	alias pattern = or!(as_p,range_p,array_p,tuple_p,bracket_p,variant_p,bind_p);
 	return src.node!(NodeType.Tuple,seq!(omit!(same!'('),omit!emp,pattern,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pattern)),omit!emp,omit!(same!')')));
 }
 unittest {
+}
+
+immutable(Src) range_p(immutable Src src) {
+	alias pattern = or!(as_p,tuple_p,bracket_p,array_p,variant_p,bind_p);
+	return src.node!(NodeType.Range,seq!(pattern,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,pattern))));
+}
+unittest {
+}
+
+immutable(Src) variant_p(immutable Src src) {
+	alias pattern = or!(tuple_p,bracket_p,array_p,bind_p);
+	return src.node!(NodeType.Variant,seq!(pattern,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
+}
+
+immutable(Src) record_p(immutable Src src) {
+	alias pattern = or!(as_p,tuple_p,bracket_p,array_p,range_p,variant_p,bind_p);
+	alias pair_p = node!(NodeType.Pair,seq!(pattern,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
+	return src.node!(NodeType.Record,seq!(omit!(same!'{'),omit!emp,pair_p,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pair_p,omit!emp)),omit!emp,omit!(same!'}')));
+}
+unittest {
+}
+
+immutable(Src) bracket_p(immutable Src src) {
+	alias pattern = or!(as_p,array_p,tuple_p,range_p,variant_p,record_p);
+	return src.seq!(same!'(',emp,pattern,emp,same!')');
+}
+
+immutable(AST) parse(immutable string src) {
+	auto parsed = Src(src).node!(NodeType.Root,seq!(omit!emp,seq!(or!(as_p,variant_p,range_p,record_p,tuple_p,bracket_p,array_p),omit!emp),omit!emp,opt!guard_p));
+	if (!parsed.succ || !parsed.dish.empty) throw new Exception("Syntax Error");
+	return parsed.trees[0];
+}
+unittest {
+	"x::xs @ z if (x > 10)".parse.print_trees;
 }
