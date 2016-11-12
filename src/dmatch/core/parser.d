@@ -67,23 +67,23 @@ struct Src {
 	}
 }
 
-immutable class AST {
+class AST {
 public:
-	NodeType type;
-	string data;
-	AST[] children;
+	immutable NodeType type;
+	immutable string data;
+	immutable AST[] children;
 	this(immutable NodeType type,immutable string data,immutable AST[] children) immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
 	}
-	immutable(AST) childrenChanged(immutable AST[] children) {
+	immutable(AST) childrenChanged(immutable AST[] children) immutable{
 		return new immutable AST(type,data,children);
 	}
-	immutable(AST) dataChanged(immutable string data) {
+	immutable(AST) dataChanged(immutable string data) immutable {
 		return new immutable AST(type,data,children);
 	}
-	immutable(AST) typeChanged(immutable NodeType type) {
+	immutable(AST) typeChanged(immutable NodeType type) immutable {
 		return new immutable AST(type,data,children);
 	}
 	string toString() immutable {
@@ -94,6 +94,37 @@ public:
 			return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).array.reduce!((a,b) => a ~ ", " ~ b));
 		}
 	}
+	override bool opEquals(Object o) {
+		auto ast = cast(AST)o;
+		if (ast is null) return false;
+		static if (version_major >= 2 && version_minor >= 71) {
+			return	type == ast.type &&
+					data == ast.data &&
+					zip(children,ast.children)
+					.map!(a => a[0] == a[1])
+					.fold!"a&&b"(true);
+		}
+		else {
+			return	type == ast.type &&
+					data == ast.data &&
+					zip(children,ast.children)
+					.map!(a => a[0] == a[1])
+					.array
+					.reduce!"a&&b";
+		}
+	}
+}
+unittest {
+	auto a1 = new immutable AST(NodeType.Bind,"a",[]);
+	auto a2 = new immutable AST(NodeType.Bind,"a",[]);
+	auto b1 = new immutable AST(NodeType.RVal,"1",[]);
+	auto b2 = new immutable AST(NodeType.RVal,"1",[]);
+	auto r1 = new immutable AST(NodeType.Root,"",[a1,b1]);
+	auto r2 = new immutable AST(NodeType.Root,"",[a2,b2]);
+	assert (r1 == r2);
+	auto c1 = new immutable AST(NodeType.Bind,"c",[]);
+	auto r3 = new immutable AST(NodeType.Root,"",[a1,c1]);
+	assert (r1 != r3);
 }
 
 
