@@ -36,8 +36,8 @@ xs ~ [x]
 
 #### Tuple
 ```
-(x,y)
-(x,_)
+[x,_]
+[x,y]
 ```
 #### Class and Struct
 ```
