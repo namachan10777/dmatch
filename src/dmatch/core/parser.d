@@ -18,13 +18,11 @@ enum NodeType {
 	As,
 	Array,
 	Array_Elem,
-	Tuple,
-	Empty,
 	Range,
 	Record,
 	Pair,
-	If,
-	Variant
+	Variant,
+	If
 }
 
 struct Src {
