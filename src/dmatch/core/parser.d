@@ -87,12 +87,8 @@ public:
 		return new immutable AST(type,data,children);
 	}
 	string toString() immutable {
-		static if (version_major >= 2 && version_minor >= 71) {
-			return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).fold!((a,b) => a ~ ", " ~ b)(""));
-		}
-		else {
-			return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).array.reduce!((a,b) => a ~ ", " ~ b));
-		}
+		import std.string;
+		return format("AST( %s, %s, [%s])",type,'\"'~data~'\"',children.map!(a => a.toString).join(","));
 	}
 	override bool opEquals(Object o) {
 		auto ast = cast(AST)o;
