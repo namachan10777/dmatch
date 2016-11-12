@@ -7,6 +7,7 @@ import std.ascii;
 import std.range;
 import std.traits;
 import std.format;
+import std.compiler;
 import std.algorithm.iteration;
 
 import dmatch.tvariant;
@@ -87,7 +88,12 @@ public:
 		return new immutable AST(type,data,children);
 	}
 	string toString() immutable {
-		return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).fold!((a,b) => a ~ ", " ~ b)(""));
+		static if (version_major >= 2 && version_minor >= 71) {
+			return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).fold!((a,b) => a ~ ", " ~ b)(""));
+		}
+		else {
+			return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).array.reduce!((a,b) => a ~ ", " ~ b));
+		}
 	}
 }
 
@@ -285,7 +291,12 @@ debug{
 	string tree2str(inout AST ast,string indent = "") {
 		import std.format;
 		import std.string;
-		return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
+		static if (version_major >= 2 && version_minor >= 71) {
+			return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
+		}
+		else {
+			return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array.reduce!"a~b";
+		}
 	}
 }
 
