@@ -87,7 +87,7 @@ public:
 		return new immutable AST(type,data,children);
 	}
 	string toString() immutable {
-		return format("AST : %s",cast(void*)this);
+		return format("AST( %s, %s, [%s])",type,data,children.map!(a => a.toString).fold!((a,b) => a ~ ", " ~ b)(""));
 	}
 }
 
