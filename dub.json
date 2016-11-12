@@ -9,6 +9,5 @@
 	"buildOptions":["unittests"],
 	"dflags-ldc":["-disable-linker-strip-dead"],
 	"dependencies":{
-		"ctpg":"~master"
 	}
 }
