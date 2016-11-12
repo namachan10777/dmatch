@@ -2,7 +2,7 @@ module dmatch.core.parser;
 
 import std.stdio;
 
-import std.range;
+import std.range : empty,array,zip;
 import std.ascii;
 import std.traits;
 import std.format;
@@ -103,10 +103,11 @@ public:
 		else {
 			return	type == ast.type &&
 					data == ast.data &&
+					reduce!"a&&b"(
+					true,
 					zip(children,ast.children)
 					.map!(a => a[0] == a[1])
-					.array
-					.reduce!"a&&b";
+					.array);
 		}
 	}
 }
@@ -321,7 +322,7 @@ debug{
 			return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 		}
 		else {
-			return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array.reduce!"a~b";
+			return format("%s : %s\n",ast.type,ast.data) ~ reduce!((a,b) => a ~ b)("",ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array);
 		}
 	}
 }
