@@ -193,7 +193,6 @@ alias many(alias p) = seq!(p,rep!p);
 unittest {
 	assert (Src("Dman is ","so cute.").many!(rng!"so") == Src("Dman is so"," cute.",true));
 	assert (Src("Dman is ","so cute.").many!(rng!"ab") == Src("Dman is ","so cute.",false));
-	Src("aaaa").node!(NodeType.Root,many!(term!(NodeType.Bind,same!'a'))).trees[0].print_trees;
 }
 
 //rep : 'f -> Src -> Src
@@ -416,7 +415,6 @@ immutable(Src) guard_p (immutable Src src) {
 	else return src.failed;
 }
 unittest {
-	Src("if (a == 10)").guard_p.trees[0].print_trees;
 }
 
 immutable(Src) as_p(immutable Src src) {
@@ -480,5 +478,4 @@ immutable(AST) parse(immutable string src) {
 	return parsed.trees[0];
 }
 unittest {
-	"x::xs @ z if (x > 10)".parse.print_trees;
 }
