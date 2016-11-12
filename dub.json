@@ -7,6 +7,7 @@
 	"copyright": "Copyright © 2016, Nakano Masaki",
 	"license": "BSL-1.0",
 	"buildOptions":["unittests"],
+	"dflags-ldc":["-disable-linker-strip-dead"],
 	"dependencies":{
 		"ctpg":"~master"
 	}
