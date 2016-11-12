@@ -392,14 +392,25 @@ immutable(Src) withdraw(immutable Src src) {
 	size_t begin;
 	with (src) {
 		foreach(i,head;dish) {
-			if      (head == '('){ ++cnt; found_begin = true;begin = i;}
-			else if (head == ')')  --cnt;
-			if (found_begin && cnt == 0) {
-				return Src(dish[begin+1..i],dish[i+1..$],true,trees,stack);
+			if (head == '(') {
+				if (!found_begin){
+					begin = i;
+					found_begin = true;
+				}
+				++cnt;
+			}
+			else if (head == ')') {
+				--cnt;
+				if (found_begin && cnt == 0)
+					return Src(dish[begin+1..i],dish[i+1..$],true,trees,stack);
 			}
 		}
 		return failed;
 	}
+}
+unittest {
+	assert(Src("  ( ( a+b)* )c").withdraw == Src(" ( a+b)* ","c",true));
+	assert(Src("  ( ( a+b* c").withdraw == Src("","  ( ( a+b* c",false));
 }
 immutable(Src) guard_p (immutable Src src) {
 	auto parsed = src.term!(NodeType.If,seq!(omit!(str!"if"),omit!emp,withdraw));
