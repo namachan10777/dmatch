@@ -1,5 +1,5 @@
 # dmatch
-[![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=master)](https://travis-ci.org/namachan10777/dmatch)
+[![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=develop)](https://travis-ci.org/namachan10777/dmatch)
 
 [Japanese ver](./README.ja.md)
 ## Overview
