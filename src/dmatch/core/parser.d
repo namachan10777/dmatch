@@ -282,13 +282,10 @@ immutable(Src) term(NodeType type,alias p)(immutable Src src) {
 	return src.node!(type,push!p);
 }
 debug{
-	void print_trees(inout AST ast,string indent = "") {
+	string tree2str(inout AST ast,string indent = "") {
 		import std.format;
-		writeln(indent,format("%s : %s",ast.data,ast.type));
-		if (ast.children.length > 0) {
-			foreach(child;ast.children)
-				print_trees(child,indent~"  ");
-		}
+		import std.string;
+		return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 	}
 }
 
