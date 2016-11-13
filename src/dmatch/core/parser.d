@@ -399,7 +399,7 @@ alias literal = or!(num,charLit,strLit,null_);
 template_ <- symbol emp* ('!' emp* (symbol / literal / template_)) /
 		('(' emp* (symbol / literal / template_) emp* (',' emp* symbol / literal / template_ emp* )* ')')
 +/
- Src template_ (Src src) {
+Src template_ (Src src) {
 	return seq!(symbol,emp,same!'!',emp,or!(
 			or!(symbol,literal),
 			seq!(same!'(',emp,or!(template_,symbol,literal),rep!(seq!(same!',',emp,or!(template_,symbol,literal),emp)),same!')')))(src);
