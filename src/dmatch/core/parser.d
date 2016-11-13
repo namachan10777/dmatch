@@ -8,6 +8,7 @@ import std.traits;
 import std.format;
 import std.compiler;
 import std.algorithm.iteration;
+import std.algorithm.searching;
 
 import dmatch.tvariant;
 
@@ -93,22 +94,10 @@ public:
 	override bool opEquals(Object o) {
 		auto ast = cast(AST)o;
 		if (ast is null) return false;
-		static if (version_major >= 2 && version_minor >= 71) {
-			return	type == ast.type &&
-					data == ast.data &&
-					zip(children,ast.children)
-					.map!(a => a[0] == a[1])
-					.fold!"a&&b"(true);
-		}
-		else {
-			return	type == ast.type &&
-					data == ast.data &&
-					reduce!"a&&b"(
-					true,
-					zip(children,ast.children)
-					.map!(a => a[0] == a[1])
-					.array);
-		}
+		return	type == ast.type &&
+				data == ast.data &&
+				zip(children,ast.children)
+				.all!(a => a[0] == a[1]);
 	}
 }
 unittest {
