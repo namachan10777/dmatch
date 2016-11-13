@@ -1,5 +1,5 @@
 # dmatch
-[![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=master)](https://travis-ci.org/namachan10777/dmatch)
+[![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=develop)](https://travis-ci.org/namachan10777/dmatch)
 ## Overview
 D言語でパターンマッチするライブラリです.
 ## Description
@@ -30,20 +30,19 @@ x::[]
 []
 [x]
 [x,_]
-[x,_,...]
 [x] ~ xs
 xs ~ [x]
 ```
 
 #### Tuple
 ```
-(x,y)
-(x,_)
+[x,_]
+[x,y]
 ```
 #### Class and Struct
 ```
-{x : alpha}
-{x : alpha,y : beta}
+{x = alpha}
+{x = alpha,y = beta}
 ```
 #### std.variant.Algebraic and Variant
 ```
@@ -65,5 +64,6 @@ x:Num
 #### Complex
 ```
 [(x,_)] ~ xs
-{[x,...] : alpha,{z : theta} : beta}
+{[x]~_ : alpha,{z : theta} : beta}
+{Num x : theta}
 ```
