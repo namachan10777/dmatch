@@ -387,7 +387,13 @@ unittest {
 	assert (Src("q{abc}").quote == Src("q{abc}","",true));
 }
 
-alias literal = or!(num,charLit,strLit);
+alias null_ = seq!(str!"null",and!sp);
+unittest {
+	assert (Src("null@").null_ == Src("null","@",true));
+	assert (Src("null_").null_ == Src("","null_",false));
+}
+
+alias literal = or!(num,charLit,strLit,null_);
 
 /+
 template_ <- symbol emp* ('!' emp* (symbol / literal / template_)) /
