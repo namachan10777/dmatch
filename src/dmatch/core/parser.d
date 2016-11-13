@@ -315,7 +315,7 @@ immutable(Src) term(NodeType type,alias p)(immutable Src src) {
 	return src.node!(type,push!p);
 }
 debug{
-	string tree2str(inout AST ast,string indent = "") {
+	string tree2str(inout AST ast,string indent = "  ") {
 		import std.format;
 		import std.string;
 		static if (version_major >= 2 && version_minor >= 71) {
