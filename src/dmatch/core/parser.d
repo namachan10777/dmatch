@@ -12,7 +12,7 @@ import std.algorithm.searching;
 
 import dmatch.tvariant;
 
-enum NodeType {
+enum Type {
 	Root,
 	Bind,
 	RVal,
@@ -70,12 +70,12 @@ struct Src {
 
 class AST {
 public:
-	immutable NodeType type;
+	immutable Type type;
 	immutable string data;
 	immutable AST[] children;
 	immutable pos = "";
 	immutable tag = "";
-	this(immutable NodeType type,immutable string data,immutable AST[] children,immutable string pos = "",immutable string tag = "") immutable {
+	this(immutable Type type,immutable string data,immutable AST[] children,immutable string pos = "",immutable string tag = "") immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
@@ -96,15 +96,15 @@ public:
 	}
 }
 unittest {
-	auto a1 = new immutable AST(NodeType.Bind,"a",[]);
-	auto a2 = new immutable AST(NodeType.Bind,"a",[]);
-	auto b1 = new immutable AST(NodeType.RVal,"1",[]);
-	auto b2 = new immutable AST(NodeType.RVal,"1",[]);
-	auto r1 = new immutable AST(NodeType.Root,"",[a1,b1]);
-	auto r2 = new immutable AST(NodeType.Root,"",[a2,b2]);
+	auto a1 = new immutable AST(Type.Bind,"a",[]);
+	auto a2 = new immutable AST(Type.Bind,"a",[]);
+	auto b1 = new immutable AST(Type.RVal,"1",[]);
+	auto b2 = new immutable AST(Type.RVal,"1",[]);
+	auto r1 = new immutable AST(Type.Root,"",[a1,b1]);
+	auto r2 = new immutable AST(Type.Root,"",[a2,b2]);
 	assert (r1 == r2);
-	auto c1 = new immutable AST(NodeType.Bind,"c",[]);
-	auto r3 = new immutable AST(NodeType.Root,"",[a1,c1]);
+	auto c1 = new immutable AST(Type.Bind,"c",[]);
+	auto r3 = new immutable AST(Type.Root,"",[a1,c1]);
 	assert (r1 != r3);
 }
 
@@ -278,7 +278,7 @@ unittest {
 }
 
 //子をまとめて親を作る
-immutable(Src) node(NodeType type,alias p)(immutable Src src) {
+immutable(Src) node(Type type,alias p)(immutable Src src) {
 	auto parsed = p (src);
 	with(parsed) {
 		if (succ) return Src(ate,dish,succ,[new immutable AST(type,popStack,trees)],popedStack);
@@ -295,7 +295,7 @@ immutable(Src) push(alias p)(immutable Src src) {
 		else return src.failed;
 	}
 }
-immutable(Src) term(NodeType type,alias p)(immutable Src src) {
+immutable(Src) term(Type type,alias p)(immutable Src src) {
 	return src.node!(type,push!p);
 }
 debug{
@@ -403,13 +403,13 @@ unittest {
 	assert(Src("foo (hoge!x, 0x12 ,hoge(foo))").func == Src("foo (hoge!x, 0x12 ,hoge(foo))","",true));
 }
 
-alias rval_p = term!(NodeType.RVal,or!(func,literal));
+alias rval_p = term!(Type.RVal,or!(func,literal));
 unittest {
-	assert(Src("0x12").rval_p.trees == [new immutable AST(NodeType.RVal,"0x12",[])]);
+	assert(Src("0x12").rval_p.trees == [new immutable AST(Type.RVal,"0x12",[])]);
 }
-alias bind_p = term!(NodeType.Bind,symbol);
+alias bind_p = term!(Type.Bind,symbol);
 unittest {
-	assert(Src("__abc123").bind_p.trees == [new immutable AST(NodeType.Bind,"__abc123",[])]);
+	assert(Src("__abc123").bind_p.trees == [new immutable AST(Type.Bind,"__abc123",[])]);
 }
 
 //if (/+この部分+/)　を抜き出す
@@ -440,78 +440,78 @@ unittest {
 	assert(Src("  ( ( a+b* c").withdraw == Src("","  ( ( a+b* c",false));
 }
 immutable(Src) guard_p (immutable Src src) {
-	auto parsed = src.term!(NodeType.If,seq!(omit!(str!"if"),omit!emp,withdraw));
+	auto parsed = src.term!(Type.If,seq!(omit!(str!"if"),omit!emp,withdraw));
 	if (parsed.succ) return parsed;
 	else return src.failed;
 }
 unittest {
-	assert(Src("if (a > 2)").guard_p.trees == [new immutable AST(NodeType.If,"a > 2",[])]);
+	assert(Src("if (a > 2)").guard_p.trees == [new immutable AST(Type.If,"a > 2",[])]);
 	assert(Src("if (a > 2 ").guard_p == Src("","if (a > 2 ",false));
 }
 
 immutable(Src) as_p(immutable Src src) {
 	alias pattern = or!(array_p,bracket_p,variant_p,rval_p,bind_p);
-	return src.node!(NodeType.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
+	return src.node!(Type.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
 }
 unittest {
-	assert(Src("a @ b").as_p.trees == [new immutable AST(NodeType.As,"",[new immutable AST(NodeType.Bind,"a",[]),new immutable AST(NodeType.Bind,"b",[])])]);
+	assert(Src("a @ b").as_p.trees == [new immutable AST(Type.As,"",[new immutable AST(Type.Bind,"a",[]),new immutable AST(Type.Bind,"b",[])])]);
 	assert(Src("a @ ").as_p == Src("","a @ ",false));
 }
 
 immutable(Src) array_elem_p(immutable Src src) {
 	alias pattern = or!(as_p,array_p,bracket_p,rval_p,bind_p,);
-	return src.node!(NodeType.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp)),omit!(same!']')));
+	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp)),omit!(same!']')));
 }
 unittest {
 	assert(Src("[a,b]").array_elem_p.trees ==
-		[new immutable AST(NodeType.Array_Elem,"",[new immutable AST(NodeType.Bind,"a",[]),new immutable AST(NodeType.Bind,"b",[])])]);
+		[new immutable AST(Type.Array_Elem,"",[new immutable AST(Type.Bind,"a",[]),new immutable AST(Type.Bind,"b",[])])]);
 	assert(Src("[]").array_elem_p.trees ==
-		[new immutable AST(NodeType.Array_Elem,"",[])]);
+		[new immutable AST(Type.Array_Elem,"",[])]);
 	assert(Src("[,]").array_elem_p == Src("","[,]",false));
 }
 
 immutable(Src) array_p(immutable Src src) {
 	alias pattern = or!(array_elem_p,rval_p,bind_p);
-	return src.node!(NodeType.Array,or!(
+	return src.node!(Type.Array,or!(
 		seq!(pattern,omit!emp,many!(seq!(omit!emp,omit!(same!'~'),omit!emp,pattern))),
 		array_elem_p));
 }
 unittest {
 	assert(Src("[a]~[]").array_p.trees == [
-		new immutable AST(NodeType.Array,"",[
-			new immutable AST(NodeType.Array_Elem,"",[new immutable AST(NodeType.Bind,"a",[])]),
-			new immutable AST(NodeType.Array_Elem,"",[])])]);
+		new immutable AST(Type.Array,"",[
+			new immutable AST(Type.Array_Elem,"",[new immutable AST(Type.Bind,"a",[])]),
+			new immutable AST(Type.Array_Elem,"",[])])]);
 	assert(Src("~[a]").array_p == Src("","~[a]",false));
 }
 
 immutable(Src) range_p(immutable Src src) {
 	alias pattern = or!(as_p,bracket_p,array_p,variant_p,rval_p,bind_p);
-	return src.node!(NodeType.Range,seq!(pattern,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,pattern))));
+	return src.node!(Type.Range,seq!(pattern,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,pattern))));
 }
 unittest {
-	assert(Src("x::xs").range_p.trees == [new immutable AST(NodeType.Range,"",[new immutable AST(NodeType.Bind,"x",[]),new immutable AST(NodeType.Bind,"xs",[])])]);
+	assert(Src("x::xs").range_p.trees == [new immutable AST(Type.Range,"",[new immutable AST(Type.Bind,"x",[]),new immutable AST(Type.Bind,"xs",[])])]);
 	assert(Src("x::").range_p == Src("","x::",false));
 }
 
 immutable(Src) variant_p(immutable Src src) {
 	alias pattern = or!(bracket_p,array_p,rval_p,bind_p);
-	return src.node!(NodeType.Variant,seq!(pattern,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
+	return src.node!(Type.Variant,seq!(pattern,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
 }
 unittest {
-	assert (Src("x:A").variant_p.trees == [new immutable AST(NodeType.Variant,"A",[new immutable AST(NodeType.Bind,"x",[])])]);
+	assert (Src("x:A").variant_p.trees == [new immutable AST(Type.Variant,"A",[new immutable AST(Type.Bind,"x",[])])]);
 	assert (Src(":A").variant_p == Src("",":A",false));
 }
 
 immutable(Src) record_p(immutable Src src) {
 	alias pattern = or!(as_p,bracket_p,array_p,range_p,variant_p,rval_p,bind_p);
-	alias pair_p = node!(NodeType.Pair,seq!(pattern,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
-	return src.node!(NodeType.Record,seq!(omit!(same!'{'),omit!emp,pair_p,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pair_p,omit!emp)),omit!emp,omit!(same!'}')));
+	alias pair_p = node!(Type.Pair,seq!(pattern,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
+	return src.node!(Type.Record,seq!(omit!(same!'{'),omit!emp,pair_p,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pair_p,omit!emp)),omit!emp,omit!(same!'}')));
 }
 unittest {
 	assert (Src("{a = b,c = d}").record_p.trees == [
-		new immutable AST(NodeType.Record,"",[
-			new immutable AST(NodeType.Pair,"b",[new immutable AST(NodeType.Bind,"a",[])]),
-			new immutable AST(NodeType.Pair,"d",[new immutable AST(NodeType.Bind,"c",[])])])]);
+		new immutable AST(Type.Record,"",[
+			new immutable AST(Type.Pair,"b",[new immutable AST(Type.Bind,"a",[])]),
+			new immutable AST(Type.Pair,"d",[new immutable AST(Type.Bind,"c",[])])])]);
 }
 
 immutable(Src) bracket_p(immutable Src src) {
@@ -524,17 +524,17 @@ unittest {
 }
 
 immutable(AST) parse(immutable string src) {
-	auto parsed = Src(src).node!(NodeType.Root,seq!(omit!emp,seq!(or!(variant_p,range_p,as_p,record_p,bracket_p,array_p),omit!emp),omit!emp,opt!guard_p));
+	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(variant_p,range_p,as_p,record_p,bracket_p,array_p),omit!emp),omit!emp,opt!guard_p));
 	if (!parsed.succ || !parsed.dish.empty) throw new Exception("Syntax Error");
 	return parsed.trees[0];
 }
 unittest {
 	assert ("x@y::xs if(x > 2)".parse == 
-		new immutable AST(NodeType.Root,"",[
-			new immutable AST(NodeType.Range,"",[
-				new immutable AST(NodeType.As,"",[
-					new immutable AST(NodeType.Bind,"x",[]),
-					new immutable AST(NodeType.Bind,"y",[])]),
-				new immutable AST(NodeType.Bind,"xs",[])]),
-		new immutable AST(NodeType.If,"x > 2",[])]));
+		new immutable AST(Type.Root,"",[
+			new immutable AST(Type.Range,"",[
+				new immutable AST(Type.As,"",[
+					new immutable AST(Type.Bind,"x",[]),
+					new immutable AST(Type.Bind,"y",[])]),
+				new immutable AST(Type.Bind,"xs",[])]),
+		new immutable AST(Type.If,"x > 2",[])]));
 }
