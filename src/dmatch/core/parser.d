@@ -73,10 +73,14 @@ public:
 	immutable NodeType type;
 	immutable string data;
 	immutable AST[] children;
-	this(immutable NodeType type,immutable string data,immutable AST[] children) immutable {
+	immutable pos = "";
+	immutable tag = "";
+	this(immutable NodeType type,immutable string data,immutable AST[] children,immutable string pos = "",immutable string tag = "") immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
+		this.pos = pos;
+		this.tag = tag;
 	}
 	string toString() immutable {
 		import std.string;
