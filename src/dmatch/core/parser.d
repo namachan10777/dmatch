@@ -91,6 +91,7 @@ public:
 		if (ast is null) return false;
 		return	type == ast.type &&
 				data == ast.data &&
+				children.length == ast.children.length &&
 				zip(children,ast.children)
 				.all!(a => a[0] == a[1]);
 	}
