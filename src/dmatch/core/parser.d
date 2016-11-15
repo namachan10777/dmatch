@@ -78,15 +78,6 @@ public:
 		this.data = data;
 		this.children = children;
 	}
-	immutable(AST) childrenChanged(immutable AST[] children) immutable{
-		return new immutable AST(type,data,children);
-	}
-	immutable(AST) dataChanged(immutable string data) immutable {
-		return new immutable AST(type,data,children);
-	}
-	immutable(AST) typeChanged(immutable NodeType type) immutable {
-		return new immutable AST(type,data,children);
-	}
 	string toString() immutable {
 		import std.string;
 		return format("AST( %s, %s, [%s])",type,'\"'~data~'\"',children.map!(a => a.toString).join(","));
