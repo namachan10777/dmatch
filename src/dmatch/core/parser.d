@@ -303,10 +303,12 @@ debug{
 		import std.format;
 		import std.string;
 		static if (version_major >= 2 && version_minor >= 71) {
-			return format("%s : %s\n",ast.type,ast.data) ~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
+			return format("%s : \"%s\" (pos = \"%s\",tag = \"%s\")\n",ast.type,ast.data,ast.pos,ast.tag)
+					~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 		}
 		else {
-			return format("%s : %s\n",ast.type,ast.data) ~ reduce!((a,b) => a ~ b)("",ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array);
+			return format("%s : \"%s\" (pos = \"%s\",tag = \"%s\"\n)",ast.type,ast.data,ast.pos,ast.tag)
+					~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array.join;
 		}
 	}
 }
