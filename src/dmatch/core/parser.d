@@ -23,7 +23,8 @@ enum Type {
 	Record,
 	Pair,
 	Variant,
-	If
+	If,
+	Empty
 }
 
 struct Src {
@@ -68,14 +69,50 @@ struct Src {
 	}
 }
 
+struct Index {
+	immutable size_t index;
+	immutable bool reverse;
+	immutable bool enabled = false;
+	this(size_t index,bool reverse) {
+		this(index,reverse,true);
+	}
+	this(size_t index,bool reverse,bool enabled) {
+		this.index = index;
+		this.reverse = reverse;
+		this.enabled = enabled;
+	}
+	static Index disabled() {
+		return Index(0,false,false);
+	}
+	string toString() {
+		if (reverse)
+			return format("$-%s",index + 1);
+		else
+			return format("%s",index);
+	}
+	Index inSlice() {
+		if (reverse)
+			return Index(index-1,true);
+		return  this;
+	}
+}
+unittest {
+	assert(Index(2,false).toString == "2");
+	assert(Index(1,true).toString == "$-2");
+	assert(Index(1,false).inSlice.toString == "1");
+	assert(Index(1,true).inSlice.toString == "$-1");
+	Index idx;
+	assert(idx == Index(0,false,false));
+}
+
 class AST {
 public:
 	immutable Type type;
 	immutable string data;
 	immutable AST[] children;
-	immutable pos = "";
+	immutable Index pos;
 	immutable tag = "";
-	this(immutable Type type,immutable string data,immutable AST[] children,immutable string pos = "",immutable string tag = "") immutable {
+	this(immutable Type type,immutable string data,immutable AST[] children,immutable Index pos = Index.disabled,immutable string tag = "") immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
@@ -91,6 +128,8 @@ public:
 		if (ast is null) return false;
 		return	type == ast.type &&
 				data == ast.data &&
+				pos  == ast.pos  &&
+				tag  == ast.tag  &&
 				children.length == ast.children.length &&
 				zip(children,ast.children)
 				.all!(a => a[0] == a[1]);
