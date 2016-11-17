@@ -481,6 +481,8 @@ unittest {
 	assert(Src("  ( ( a+b)* )c").withdraw == Src(" ( a+b)* ","c",true));
 	assert(Src("  ( ( a+b* c").withdraw == Src("","  ( ( a+b* c",false));
 }
+
+// if (x > 2)
 immutable(Src) guard_p (immutable Src src) {
 	auto parsed = src.term!(Type.If,seq!(omit!(str!"if"),omit!emp,withdraw));
 	if (parsed.succ) return parsed;
@@ -491,6 +493,7 @@ unittest {
 	assert(Src("if (a > 2 ").guard_p == Src("","if (a > 2 ",false));
 }
 
+//a @ b @ c
 immutable(Src) as_p(immutable Src src) {
 	alias pattern = or!(array_p,bracket_p,variant_p,rval_p,bind_p);
 	return src.node!(Type.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
@@ -500,6 +503,7 @@ unittest {
 	assert(Src("a @ ").as_p == Src("","a @ ",false));
 }
 
+// [a,b,c]
 immutable(Src) array_elem_p(immutable Src src) {
 	alias pattern = or!(as_p,array_p,bracket_p,rval_p,bind_p,);
 	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp)),omit!(same!']')));
@@ -512,6 +516,7 @@ unittest {
 	assert(Src("[,]").array_elem_p == Src("","[,]",false));
 }
 
+//[a,b,c] ~ d
 immutable(Src) array_p(immutable Src src) {
 	alias pattern = or!(array_elem_p,rval_p,bind_p);
 	return src.node!(Type.Array,or!(
@@ -526,6 +531,7 @@ unittest {
 	assert(Src("~[a]").array_p == Src("","~[a]",false));
 }
 
+//a::b::c
 immutable(Src) range_p(immutable Src src) {
 	alias pattern = or!(as_p,bracket_p,array_p,variant_p,rval_p,bind_p);
 	return src.node!(Type.Range,seq!(pattern,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,pattern))));
@@ -535,6 +541,7 @@ unittest {
 	assert(Src("x::").range_p == Src("","x::",false));
 }
 
+//a : c
 immutable(Src) variant_p(immutable Src src) {
 	alias pattern = or!(bracket_p,array_p,rval_p,bind_p);
 	return src.node!(Type.Variant,seq!(pattern,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
@@ -544,6 +551,7 @@ unittest {
 	assert (Src(":A").variant_p == Src("",":A",false));
 }
 
+//{a = b,c = d}
 immutable(Src) record_p(immutable Src src) {
 	alias pattern = or!(as_p,bracket_p,array_p,range_p,variant_p,rval_p,bind_p);
 	alias pair_p = node!(Type.Pair,seq!(pattern,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
@@ -556,6 +564,7 @@ unittest {
 			new immutable AST(Type.Pair,"d",[new immutable AST(Type.Bind,"c",[])])])]);
 }
 
+//(a::b) @ c :: d
 immutable(Src) bracket_p(immutable Src src) {
 	alias pattern = or!(as_p,range_p,variant_p);
 	return src.seq!(omit!(same!'('),omit!emp,pattern,omit!emp,omit!(same!')'));
