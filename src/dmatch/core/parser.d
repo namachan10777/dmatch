@@ -347,7 +347,7 @@ debug{
 					~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 		}
 		else {
-			return format("%s : \"%s\" (pos = \"%s\",tag = \"%s\"\n)",ast.type,ast.data,ast.pos,ast.tag)
+			return format("%s : \"%s\" (pos = \"%s\",tag = \"%s\")\n",ast.type,ast.data,ast.pos,ast.tag)
 					~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array.join;
 		}
 	}
