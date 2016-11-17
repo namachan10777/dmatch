@@ -80,35 +80,6 @@ unittest {
 		"cannot decison range of bind pattern inarray");
 }
 
-bool isFixedLength(immutable AST tree)
-in {
-	with (tree){
-		assert (type == Type.Array_Elem ||
-				type == Type.Array ||
-				type == Type.As ||
-				type == Type.Bind);
-	}
-}
-body{
-	switch(tree.type) {
-	case Type.Array_Elem :
-		return false;
-	case Type.Array :
-		return tree.children.any!(a => isFixedLength(a));
-	case Type.As :
-		return !tree.children.any!(a => !isFixedLength(a));
-	case Type.Bind :
-		return true;
-	default:
-		return true;
-	}
-}
-unittest {
-	import dmatch.core.parser;
-	assert("[a]~b~c".parse.children[0].isFixedLength);
-	assert(!"[a]~[b]~[c]".parse.children[0].isFixedLength);
-}
-
 immutable(AST) addIndex(immutable AST array_p) 
 in {
 	assert (array_p.type == Type.Array);
