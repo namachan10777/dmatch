@@ -52,6 +52,9 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled,string tag 
 
 	case Type.Root :
 		return new immutable AST(Type.Root,"",tree.children.map!(a => analyze(a)).array);
+	case Type.Variant :
+		assert (tree.children.length > 0);
+		return new immutable AST(Type.Variant,tree.data,tree.children.map!(a => analyze(a)).array);
 
 	default :
 		throw new ValidPatternException("Unknown Node");
