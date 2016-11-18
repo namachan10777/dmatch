@@ -17,7 +17,7 @@ static class ValidPatternException : Exception {
 }
 
 immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled,string tag = "") {
-	switch(tree.type) {
+	final switch(tree.type) {
 	case Type.Bind :
 		assert (tree.children.length == 0);
 		return tree; 
@@ -25,6 +25,12 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled,string tag 
 	case Type.RVal :
 		assert (tree.children.length == 0);
 		return tree;
+	
+	case Type.If :
+		return tree;
+
+	case Type.Empty :
+		return  tree;
 
 	case Type.As :
 		return new immutable AST(Type.As,tree.data,tree.children.map!(a => analyze(a)).array);
@@ -55,9 +61,6 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled,string tag 
 	case Type.Variant :
 		assert (tree.children.length > 0);
 		return new immutable AST(Type.Variant,tree.data,tree.children.map!(a => analyze(a)).array);
-
-	default :
-		throw new ValidPatternException("Unknown Node");
 	}
 }
 unittest {
