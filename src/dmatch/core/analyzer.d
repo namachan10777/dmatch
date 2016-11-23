@@ -66,24 +66,24 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled,string tag 
 unittest {
 	import dmatch.core.parser;
 	import std.exception : assertThrown;
-	assert ("{a@e = e,x::(y::xs)@h=g}".parse.analyze == "{a@e = e,x::(y::xs)@h=g}".parse);
-	assert ("[a]~[b]~c".parse.analyze ==
+	static assert ("{a@e = e,x::(y::xs)@h=g}".parse.analyze == "{a@e = e,x::(y::xs)@h=g}".parse);
+	static assert ("[a]~[b]~c".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false),""),
 					immutable AST(Type.Bind,"b",[],Index(1,false),"")]),
 				immutable AST(Type.Bind,"c",[])])]));
-	assert ("a~[b]~[c]".parse.analyze ==
+	static assert ("a~[b]~[c]".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Bind,"a",[]),
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"b",[],Index(1,true),""),
 					immutable AST(Type.Bind,"c",[],Index(0,true),"")])])]));
-	assertThrown!ValidPatternException(
+	static assert((){assertThrown!ValidPatternException(
 		"a~[b]~c".parse.analyze,
-		"cannot decison range of bind pattern inarray");
+		"cannot decison range of bind pattern inarray");return true;}());
 }
 
 immutable(AST) addIndex(immutable AST array_p)
@@ -118,21 +118,21 @@ body {
 }
 unittest {
 	import dmatch.core.parser : parse;
-	assert("[a,b,c]".parse.children[0].addIndex ==
+	static assert("[a,b,c]".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),
 					immutable AST(Type.Bind,"b",[],Index(1,false)),
 					immutable AST(Type.Bind,"c",[],Index(2,false))])]));
 
-	assert ("[a,b]~c".parse.children[0].addIndex ==
+	static assert ("[a,b]~c".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"a",[],Index(0,false)),
 						immutable AST(Type.Bind,"b",[],Index(1,false))]),
 					immutable AST(Type.Bind,"c",[])]));
 
-	assert ("a~[b,c]".parse.children[0].addIndex ==
+	static assert ("a~[b,c]".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 					immutable AST(Type.Bind,"a",[]),
 					immutable AST(Type.Array_Elem,"",[
@@ -161,7 +161,7 @@ body{
 	return immutable AST(Type.Array,"",merge(array_p.children));
 }
 unittest {
-	assert ((immutable AST(Type.Array,"",[
+	static assert ((immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[]),
 					immutable AST(Type.Bind,"b",[])]),
@@ -179,7 +179,7 @@ unittest {
 					immutable AST(Type.Bind,"d",[])]),
 				immutable AST(Type.Bind,"d",[])]));
 
-	assert ((immutable AST(Type.Array,"",[
+	static assert ((immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[])]),
 				immutable AST(Type.Bind,"b",[])]))
