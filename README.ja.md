@@ -14,10 +14,10 @@ Tagged Variantを定義しています
 ### サンプルコード
 ```
 int add_all(int[] list){
-	return pmatch!(int[],
+	return mixin(pmatch!(
 			q{[] => return 0;},
 			q{[x] ~ xs => return x + add_all(xs);})
-			(list);
+			(list));
 }
 ```
 ### パターンのサンプル

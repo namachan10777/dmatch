@@ -15,10 +15,10 @@ Pattern matching for D
 ### sample code
 ```
 int add_all(int[] list){
-	return pmatch!(int[],
+	return mixin(pmatch!(
 			q{[] => return 0;},
 			q{[x] ~ xs => return x + add_all(xs);})
-			(list);
+			(list));
 }
 ```
 ### sample pattern
