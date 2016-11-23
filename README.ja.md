@@ -1,5 +1,8 @@
 # dmatch
 [![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=develop)](https://travis-ci.org/namachan10777/dmatch)
+
+*This repository under development...*
+
 ## Overview
 D言語でパターンマッチするライブラリです.
 ## Description
