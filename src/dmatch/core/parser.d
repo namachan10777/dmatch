@@ -109,13 +109,11 @@ public:
 	immutable string data;
 	immutable AST[] children;
 	immutable Index pos;
-	immutable tag = "";
-	this(immutable Type type,immutable string data,immutable AST[] children,immutable Index pos = Index.disabled,immutable string tag = "") immutable {
+	this(immutable Type type,immutable string data,immutable AST[] children,immutable Index pos = Index.disabled) immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
 		this.pos = pos;
-		this.tag = tag;
 	}
 	string toString() immutable {
 		import std.string;
@@ -125,7 +123,6 @@ public:
 		return	type == ast.type &&
 				data == ast.data &&
 				pos  == ast.pos  &&
-				tag  == ast.tag  &&
 				children.length == ast.children.length &&
 				zip(children,ast.children)
 				.all!(a => a[0] == a[1]);
@@ -338,11 +335,11 @@ string tree2str(inout AST ast,string indent = "  ") {
 	import std.format;
 	import std.string;
 	static if (version_major >= 2 && version_minor >= 71) {
-		return format("%s : \"%s\" (pos = \"%s\",tag = \"%s\")\n",ast.type,ast.data,ast.pos,ast.tag)
+		return format("%s : \"%s\" (pos = \"%s\")\n",ast.type,ast.data,ast.pos)
 				~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 	}
 	else {
-		return format("%s : \"%s\" (pos = \"%s\",tag = \"%s\")\n",ast.type,ast.data,ast.pos,ast.tag)
+		return format("%s : \"%s\" (pos = \"%s\")\n",ast.type,ast.data,ast.pos)
 				~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array.join;
 	}
 }
