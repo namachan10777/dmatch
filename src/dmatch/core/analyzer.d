@@ -33,8 +33,12 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 		return immutable AST(tree.type,tree.data,tree.children.map!(a => analyze(a)).array);
 
 	case Type.Array :
-		assert (tree.children.length > 1);
-		return tree.normalizeArrayPattern.addIndex;
+		if (tree.children.length == 0) {
+			return immutable AST(Type.Empty,"",[],tree.pos);
+		}
+		else{
+			return tree.normalizeArrayPattern.addIndex;
+		}
 
 	case Type.Array_Elem :
 		if (tree.children.length == 0)
