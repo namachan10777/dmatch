@@ -26,12 +26,15 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 
 	case Type.As :
 	case Type.Range :
-	case Type.Root :
 	case Type.Pair :
 	case Type.Record :
 	case Type.Variant :
 		return immutable AST(tree.type,tree.data,tree.children.map!(a => analyze(a)).array);
-
+	case Type.Root :
+		if (tree.children.length == 1)
+			return immutable AST(Type.Root,"",[tree.children[0].analyze,immutable AST(Type.If,"true",[])]);
+		else
+			return immutable AST(Type.Root,"",[tree.children[0].analyze]);
 	case Type.Array :
 		if (tree.children.length == 0) {
 			return immutable AST(Type.Empty,"",[],tree.pos);
@@ -50,21 +53,23 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 unittest {
 	import dmatch.core.parser;
 	import std.exception : assertThrown;
-	static assert ("{a@e = e,x::(y::xs)@h=g}".parse.analyze == "{a@e = e,x::(y::xs)@h=g}".parse);
+	static assert ("{a@e = e,x::(y::xs)@h=g}".parse.analyze == "{a@e = e,x::(y::xs)@h=g}if(true)".parse);
 	static assert ("[a]~[b]~c".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),
 					immutable AST(Type.Bind,"b",[],Index(1,false))]),
-				immutable AST(Type.Bind,"c",[])])]));
+				immutable AST(Type.Bind,"c",[])]),
+			immutable AST(Type.If,"true",[])]));
 	static assert ("a~[b]~[c]".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Bind,"a",[]),
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"b",[],Index(1,true)),
-					immutable AST(Type.Bind,"c",[],Index(0,true))])])]));
+					immutable AST(Type.Bind,"c",[],Index(0,true))])]),
+			immutable AST(Type.If,"true",[])]));
 	static assert((){assertThrown!ValidPatternException(
 		"a~[b]~c".parse.analyze,
 		"cannot decison range of bind pattern inarray");return true;}());
