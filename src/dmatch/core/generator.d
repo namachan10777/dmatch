@@ -75,3 +75,34 @@ unittest {
 				immutable AST(Type.Bind,"a",[]),
 				immutable AST(Type.If,"a < 10&&a > -10&&a % 3 == 0",[])]));
 }
+
+immutable(string) generate(immutable AST tree,immutable string parent,immutable string code = "") {
+	import std.format;
+	final switch(tree.type) {
+	case Type.Bind :
+		return format("auto %s = %s;",tree.data,parent);
+	case Type.Record :
+		return tree.children.map!(a => a.generate(parent)).join;
+	case Type.Pair :
+		return tree.children[0].generate(format("%s.%s",parent,tree.data));
+	case Type.Root :
+		return tree.children.map!(a => a.generate(parent,code)).join;
+	case Type.If :
+		return format("if(%s){%s}",tree.data,code);
+	case Type.As :
+	case Type.Array :
+	case Type.Array_Elem :
+	case Type.Range :
+	case Type.Empty :
+	case Type.Variant :
+		return "";
+	case Type.RVal:
+		assert(false);
+	}
+}
+
+unittest {
+	static assert ("x".parse.generate("arg") == "auto x = arg;");
+	static assert ("{{x=b}=a,y=b}".parse.generate("arg") == "auto x = arg.a.b;auto y = arg.b;");
+	static assert ("x if (x > 10)".parse.generate("arg","return x;") == "auto x = arg;if(x > 10){return x;}");
+}
