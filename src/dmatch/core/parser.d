@@ -544,7 +544,7 @@ unittest {
 
 //{a = b,c = d}
 immutable(Src) record_p(immutable Src src) {
-	alias pattern = or!(as_p,bracket_p,array_p,range_p,variant_p,rval_p,bind_p);
+	alias pattern = or!(as_p,bracket_p,array_p,range_p,record_p,variant_p,rval_p,bind_p);
 	alias pair_p = node!(Type.Pair,seq!(pattern,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
 	return src.node!(Type.Record,seq!(omit!(same!'{'),omit!emp,pair_p,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pair_p,omit!emp)),omit!emp,omit!(same!'}')));
 }
