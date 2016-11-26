@@ -55,6 +55,23 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 	}
 }
 
-unittest{
-	
+immutable(AST) linkGuard(immutable AST tree,immutable string[] condtions)
+in{
+	assert (tree.type == Type.Root);
+}
+body{
+	immutable guard = tree.children.length == 2 ?
+					immutable AST(Type.If,tree.children[1].data ~ "&&" ~ condtions.join("&&"),[]) :
+					immutable AST(Type.If,                        	     condtions.join("&&"),[]);
+	return immutable AST(Type.Root,"",[tree.children[0],guard]);
+}
+unittest {
+	enum tree = immutable AST(Type.Root,"",[
+							immutable AST(Type.Bind,"a",[]),
+							immutable AST(Type.If,"a < 10",[])]);
+	enum condtions = ["a > -10","a % 3 == 0"];
+	static assert (linkGuard(tree,condtions) ==
+			immutable AST(Type.Root,"",[
+				immutable AST(Type.Bind,"a",[]),
+				immutable AST(Type.If,"a < 10&&a > -10&&a % 3 == 0",[])]));
 }
