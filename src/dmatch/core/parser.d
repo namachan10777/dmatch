@@ -566,7 +566,7 @@ unittest {
 }
 
 immutable(AST) parse(immutable string src) {
-	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(range_p,as_p,variant_p,record_p,bracket_p,array_p),omit!emp),omit!emp,opt!guard_p));
+	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(range_p,as_p,variant_p,record_p,bracket_p,array_p,bind_p),omit!emp),omit!emp,opt!guard_p));
 	if (!parsed.succ || !parsed.dish.empty) throw new Exception("Syntax Error");
 	return parsed.trees[0];
 }
