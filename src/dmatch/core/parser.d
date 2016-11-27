@@ -487,7 +487,7 @@ unittest {
 
 //a @ b @ c
 immutable(Src) as_p(immutable Src src) {
-	alias pattern = or!(array_p,bracket_p,variant_p,rval_p,bind_p);
+	alias pattern = or!(array_p,bracket_p,record_p,variant_p,rval_p,bind_p);
 	return src.node!(Type.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
 }
 unittest {
