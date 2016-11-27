@@ -12,6 +12,7 @@ import std.algorithm.searching;
 
 import dmatch.tvariant;
 import dmatch.core.type;
+import dmatch.core.util;
 
 struct Src {
 	immutable string ate;
@@ -247,14 +248,8 @@ immutable(Src) term(Type type,alias p)(immutable Src src) {
 string tree2str(inout AST ast,string indent = "  ") {
 	import std.format;
 	import std.string;
-	static if (version_major >= 2 && version_minor >= 71) {
-		return format("%s : \"%s\" (pos = \"%s\")\n",ast.type,ast.data,ast.pos)
-				~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
-	}
-	else {
-		return format("%s : \"%s\" (pos = \"%s\")\n",ast.type,ast.data,ast.pos)
-				~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).array.join;
-	}
+	return format("%s : \"%s\" (pos = \"%s\")\n",ast.type,ast.data,ast.pos)
+			~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 }
 
 //基本的な規則

@@ -12,6 +12,7 @@ import std.compiler;
 import dmatch.core.parser;
 import dmatch.core.analyzer;
 import dmatch.core.type;
+import dmatch.core.util;
 
 alias Tp = Tuple;
 
@@ -30,12 +31,7 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 		case Type.Range:
 			auto result = tree.children.map!(a => nameAssign(a));
 			immutable string[] base;
-			static if (version_major >= 2 && version_minor >= 71) {
-				immutable condtions = result.map!(a => a[1]).fold!"a~b"(base);
-			}
-			else {
-				immutable condtions = reduce!"a~b"(base,result.map!(a => a[1]).array);
-			}
+			immutable condtions = result.map!(a => a[1]).fold!"a~b"(base);
 			immutable children = result.map!(a => a[0]).array;
 			return typeof(return)(immutable AST(tree.type,tree.data,children,tree.pos),condtions);
 		case Type.RVal:
