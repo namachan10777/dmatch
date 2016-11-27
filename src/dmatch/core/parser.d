@@ -90,17 +90,18 @@ struct Index {
 		else
 			return format("%s",index);
 	}
-	Index inSlice() {
+	string otherSide() {
 		if (reverse)
-			return Index(index-1,true);
-		return  this;
+			return format("0..$-%s",index+1);
+		else
+			return format("%s..$",index+1);
 	}
 }
 unittest {
 	static assert(Index(2,false).toString == "2");
 	static assert(Index(1,true).toString == "$-2");
-	static assert(Index(1,false).inSlice.toString == "1");
-	static assert(Index(1,true).inSlice.toString == "$-1");
+	static assert(Index(2,false).otherSide == "3..$");
+	static assert(Index(1,true).otherSide == "0..$-2");
 }
 
 struct AST {
