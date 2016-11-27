@@ -11,6 +11,7 @@ import std.compiler;
 
 import dmatch.core.parser;
 import dmatch.core.analyzer;
+import dmatch.core.type;
 
 alias Tp = Tuple;
 

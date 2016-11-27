@@ -9,6 +9,7 @@ import std.stdio;
 import std.conv;
 
 import dmatch.core.parser : AST,Type,tree2str,Index;
+import dmatch.core.type;
 
 static class ValidPatternException : Exception {
 	this(string msg,string file = __FILE__,int line = __LINE__) {
