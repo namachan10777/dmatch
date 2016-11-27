@@ -24,10 +24,10 @@ struct Index {
 	immutable size_t index;
 	immutable bool reverse;
 	immutable bool enabled = false;
-	this(size_t index,bool reverse) {
+	this(size_t index,bool reverse)  {
 		this(index,reverse,true);
 	}
-	this(size_t index,bool reverse,bool enabled) {
+	this(size_t index,bool reverse,bool enabled)  {
 		this.index = index;
 		this.reverse = reverse;
 		this.enabled = enabled;
@@ -35,13 +35,13 @@ struct Index {
 	static Index disabled() {
 		return Index(0,false,false);
 	}
-	string toString() {
+	string toString() inout {
 		if (reverse)
 			return format("$-%s",index + 1);
 		else
 			return format("%s",index);
 	}
-	string otherSide() {
+	string otherSide() inout {
 		if (reverse)
 			return format("0..$-%s",index+1);
 		else
