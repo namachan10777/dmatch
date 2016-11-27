@@ -77,6 +77,29 @@ unittest {
 				immutable AST(Type.If,"a < 10&&a > -10&&a % 3 == 0",[])]));
 }
 
+size_t min_array_size(immutable AST tree) 
+in {
+	assert (tree.type == Type.Array);
+}
+body{
+	return tree.children.map!(a => a.type == Type.Array_Elem ? a.children.length : 0).fold!"a+b"(0LU);
+}
+unittest {
+	static assert (min_array_size(immutable AST(Type.Array,"",[
+				immutable AST(Type.Array_Elem,"",[
+					immutable AST(Type.Bind,"a",[]),
+					immutable AST(Type.Bind,"b",[]),
+					immutable AST(Type.Bind,"c",[])]),
+				immutable AST(Type.Bind,"d",[])]))
+			== 3);
+	static assert (min_array_size(immutable AST(Type.Array,"",[
+				immutable AST(Type.Array_Elem,"",[
+					immutable AST(Type.Bind,"a",[]),
+					immutable AST(Type.Bind,"b",[]),
+					immutable AST(Type.Bind,"c",[])])]))
+			== 3);
+}
+
 immutable(string) generate(immutable AST tree,immutable string parent,immutable string code = "") {
 	import std.format;
 	final switch(tree.type) {
@@ -91,8 +114,23 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 	case Type.If :
 		return format("if(%s){%s}",tree.data,code);
 	case Type.As :
+		return tree.children.map!(a => a.generate(parent,code)).join;	
 	case Type.Array :
+		if (tree.children.length == 1) {
+			return tree.children[0].generate(parent);
+		}
+		else {
+			if (tree.children[0].type == Type.Bind) {
+				immutable otherSide = tree.children[0].generate(parent ~ format("[%s]",tree.children[1].children[0].pos.otherSide));
+				return otherSide ~ tree.children[1].generate(parent);
+			}
+			else {
+				immutable otherSide = tree.children[1].generate(parent ~ format("[%s]",tree.children[0].children[$-1].pos.otherSide));
+				return otherSide ~ tree.children[0].generate(parent);
+			}
+		}
 	case Type.Array_Elem :
+		return tree.children.map!(a => generate(a,parent ~ format("[%s]",a.pos))).join;
 	case Type.Range :
 	case Type.Empty :
 	case Type.Variant :
@@ -106,4 +144,6 @@ unittest {
 	static assert ("x".parse.generate("arg") == "auto x = arg;");
 	static assert ("{{x=b}=a,y=b}".parse.generate("arg") == "auto x = arg.a.b;auto y = arg.b;");
 	static assert ("x if (x > 10)".parse.generate("arg","return x;") == "auto x = arg;if(x > 10){return x;}");
+	static assert ("{a=b} @ c".parse.generate("arg") == "auto a = arg.b;auto c = arg;");
+	static assert ("[a,b,c]~d".parse.analyze.generate("arg") == "auto d = arg[3..$];auto a = arg[0];auto b = arg[1];auto c = arg[2];if(true){}");
 }
