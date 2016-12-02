@@ -2,6 +2,7 @@ module dmatch.core.type;
 
 import std.algorithm.iteration;
 import std.algorithm.searching;
+import std.algorithm.comparison;
 import std.range;
 import std.format;
 
@@ -47,12 +48,37 @@ struct Index {
 		else
 			return format("%s..$",index+1);
 	}
+	string nor(inout Index idx) inout {
+		if (idx.reverse == reverse) {
+			if (!reverse) {
+				return format("%d..$",  max(index,idx.index));
+			}
+			else {
+				return format("0..$-%d",max(index,idx.index));
+			}
+		}
+		else {
+			auto l  = !reverse ? this : idx;
+			auto r =  reverse ? this : idx;
+			return format("%s..$-%s",l.toString,r.index); 
+		}
+	}
 }
 unittest {
 	static assert(Index(2,false).toString == "2");
 	static assert(Index(1,true).toString == "$-2");
 	static assert(Index(2,false).otherSide == "3..$");
 	static assert(Index(1,true).otherSide == "0..$-2");
+	enum idx1 = Index(2,false);
+	enum idx2 = Index(4,false);
+	static assert(idx1.nor(idx2) == "4..$");
+	static assert(idx2.nor(idx1) == "4..$");
+	enum idx3 = Index(2,true);
+	enum idx4 = Index(4,true);
+	static assert(idx3.nor(idx4) == "0..$-4");
+	static assert(idx4.nor(idx3) == "0..$-4");
+	static assert(idx1.nor(idx3) == "2..$-2");
+	static assert(idx4.nor(idx2) == "4..$-4");
 }
 
 struct AST {
