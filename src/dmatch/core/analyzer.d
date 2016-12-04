@@ -41,7 +41,7 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 			return immutable AST(Type.Empty,"",[],tree.pos);
 		}
 		else{
-			return tree.normalizeArrayPattern.addIndex;
+			return tree.normalizeArrayPattern.addIndex.addSlice;
 		}
 
 	case Type.Array_Elem :
@@ -61,12 +61,12 @@ unittest {
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),
 					immutable AST(Type.Bind,"b",[],Index(1,false))]),
-				immutable AST(Type.Bind,"c",[])]),
+				immutable AST(Type.Bind,"c",[],Index.disabled,Range(Index(2,false),Index(0,true)))]),
 			immutable AST(Type.If,"true",[])]));
 	static assert ("a~[b]~[c]".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
-				immutable AST(Type.Bind,"a",[]),
+				immutable AST(Type.Bind,"a",[],Index.disabled,Range(Index(0,false),Index(1,true))),
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"b",[],Index(1,true)),
 					immutable AST(Type.Bind,"c",[],Index(0,true))])]),
@@ -74,6 +74,60 @@ unittest {
 	static assert((){assertThrown!ValidPatternException(
 		"a~[b]~c".parse.analyze,
 		"cannot decison range of bind pattern inarray");return true;}());
+}
+
+//addIndexされてると言う前提
+immutable(AST) addSlice(immutable AST array_p)
+in {
+	assert (array_p.type == Type.Array);
+	assert (array_p.children.length <= 3 && array_p.children.count!(a => a.type != Type.Array_Elem) <= 1);
+}
+body {
+	switch (array_p.children.length) {
+	case 1:
+		return array_p;
+	case 2:
+		if (array_p.children[0].type == Type.Array_Elem) {
+			immutable bind = array_p.children[1];
+			auto slice = immutable AST(bind.type,bind.data,bind.children,Index.disabled,Range(array_p.children[0].children[$-1].pos + 1,Index(0,true)));
+			return immutable AST(Type.Array,array_p.data,[array_p.children[0],slice]);
+		}
+		else {
+			immutable bind = array_p.children[0];
+			auto slice = immutable AST(bind.type,bind.data,bind.children,Index.disabled,Range(Index(0,false),array_p.children[1].children[0].pos));
+			return immutable AST(Type.Array,array_p.data,[slice,array_p.children[1]]);
+		}
+	case 3:
+			immutable bind = array_p.children[1];
+			auto slice = immutable AST(bind.type,bind.data,bind.children,Index.disabled,
+										Range(array_p.children[0].children[$-1].pos + 1,array_p.children[2].children[0].pos));
+			return immutable AST(Type.Array,array_p.data,[array_p.children[0],slice,array_p.children[2]]);
+	default:
+		assert(0);
+	}
+}
+unittest {
+	import dmatch.core.parser : parse;
+	static assert("[a,b]~c".parse.children[0].addIndex.addSlice == 
+			immutable AST(Type.Array,"",[
+				immutable AST(Type.Array_Elem,"",[
+						immutable AST(Type.Bind,"a",[],Index(0,false)),
+						immutable AST(Type.Bind,"b",[],Index(1,false))]),
+					immutable AST(Type.Bind,"c",[],Index.disabled,Range(Index(2,false),Index(0,true)))]));
+	static assert ("a~[b,c]".parse.children[0].addIndex.addSlice ==
+			immutable AST(Type.Array,"",[
+					immutable AST(Type.Bind,"a",[],Index.disabled,Range(Index(0,false),Index(1,true))),
+					immutable AST(Type.Array_Elem,"",[
+						immutable AST(Type.Bind,"b",[],Index(1,true)),
+						immutable AST(Type.Bind,"c",[],Index(0,true))])]));
+	
+	static assert ("[a]~b~[c]".parse.children[0].addIndex.addSlice ==
+			immutable AST(Type.Array,"",[
+				immutable AST(Type.Array_Elem,"",[
+					immutable AST(Type.Bind,"a",[],Index(0,false)),]),
+				immutable AST(Type.Bind,"b",[],Index.disabled,Range(Index(1,false),Index(0,true))),
+				immutable AST(Type.Array_Elem,"",[
+					immutable AST(Type.Bind,"c",[],Index(0,true))])]));
 }
 
 immutable(AST) addIndex(immutable AST array_p)
@@ -128,6 +182,13 @@ unittest {
 					immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"b",[],Index(1,true)),
 						immutable AST(Type.Bind,"c",[],Index(0,true))])]));
+	static assert ("[a]~b~[c]".parse.children[0].addIndex ==
+			immutable AST(Type.Array,"",[
+				immutable AST(Type.Array_Elem,"",[
+					immutable AST(Type.Bind,"a",[],Index(0,false)),]),
+				immutable AST(Type.Bind,"b",[]),
+				immutable AST(Type.Array_Elem,"",[
+					immutable AST(Type.Bind,"c",[],Index(0,true))])]));
 }
 
 immutable(AST) normalizeArrayPattern(immutable AST array_p)
