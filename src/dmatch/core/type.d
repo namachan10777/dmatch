@@ -143,18 +143,3 @@ unittest {
 	enum r3 = immutable AST(Type.Root,"",[a1,c1]);
 	static assert (r1 != r3);
 }
-
-struct Expr {
-	immutable string[] tokens;
-	this (immutable string[] tokens) immutable {
-		this.tokens = tokens;
-	}
-	immutable(Expr) replace(immutable string bind_name, immutable string target) immutable {
-		return immutable Expr(
-					tokens
-					.map!(a => a.split('.'))
-					.map!(a => a.length == 0 || a[0] != bind_name ? a : target ~ a[1..$])
-					.map!(a => a.join('.'))
-					.fold!((a,b) => a ~ [b])(cast(immutable string[])[]));
-	}
-}
