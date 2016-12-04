@@ -6,6 +6,8 @@ import std.algorithm.comparison;
 import std.range;
 import std.format;
 
+import dmatch.core.util;
+
 enum Type {
 	Root,
 	Bind,
