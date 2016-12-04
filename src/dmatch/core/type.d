@@ -21,6 +21,15 @@ enum Type {
 	Empty
 }
 
+struct Range {
+	immutable Index begin;
+	immutable Index end;
+	string toString() inout {
+		if (begin == end) return begin.toString;
+		return begin.nor(end);
+	}
+}
+
 struct Index {
 	immutable size_t index;
 	immutable bool reverse;
@@ -63,6 +72,18 @@ struct Index {
 			return format("%s..$-%s",l.toString,r.index); 
 		}
 	}
+	inout(Index) opAdd(inout size_t x) const{
+		if (!reverse)
+			return Index(index + x,reverse);
+		else
+			return Index(index - x,reverse);
+	}
+	inout(Index) opSub(inout size_t x) const{
+		if (!reverse)
+			return Index(index - x,reverse);
+		else
+			return Index(index + x,reverse);
+	}
 }
 unittest {
 	static assert(Index(2,false).toString == "2");
@@ -81,26 +102,30 @@ unittest {
 	static assert(idx4.nor(idx2) == "4..$-4");
 }
 
+
 struct AST {
 public:
 	immutable Type type;
 	immutable string data;
 	immutable AST[] children;
 	immutable Index pos;
-	this(immutable Type type,immutable string data,immutable AST[] children,immutable Index pos = Index.disabled) immutable {
+	immutable Range range;
+	this(immutable Type type,immutable string data,immutable AST[] children,immutable Index pos = Index.disabled,immutable Range range = Range(Index.disabled,Index.disabled)) immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
 		this.pos = pos;
+		this.range = range;
 	}
 	string toString() immutable {
 		import std.string;
-		return format("AST( %s, %s, [%s])",type,'\"'~data~'\"',children.map!(a => a.toString).join(","));
+		return format("AST( %s, %s, [%s], %s, %s)",type,'\"'~data~'\"',children.map!(a => a.toString).join(","),range,pos);
 	}
 	bool opEquals(immutable AST ast) immutable{
 		return	type == ast.type &&
 				data == ast.data &&
 				pos  == ast.pos  &&
+				range == ast.range &&
 				children.length == ast.children.length &&
 				zip(children,ast.children)
 				.all!(a => a[0] == a[1]);
@@ -117,4 +142,19 @@ unittest {
 	enum c1= immutable AST(Type.Bind,"c",[]);
 	enum r3 = immutable AST(Type.Root,"",[a1,c1]);
 	static assert (r1 != r3);
+}
+
+struct Expr {
+	immutable string[] tokens;
+	this (immutable string[] tokens) immutable {
+		this.tokens = tokens;
+	}
+	immutable(Expr) replace(immutable string bind_name, immutable string target) immutable {
+		return immutable Expr(
+					tokens
+					.map!(a => a.split('.'))
+					.map!(a => a.length == 0 || a[0] != bind_name ? a : target ~ a[1..$])
+					.map!(a => a.join('.'))
+					.fold!((a,b) => a ~ [b])(cast(immutable string[])[]));
+	}
 }
