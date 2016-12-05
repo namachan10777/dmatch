@@ -30,6 +30,9 @@ struct Range {
 		if (begin == end) return begin.toString;
 		return begin.nor(end);
 	}
+	bool opEquals(Range range) inout {
+		return begin == range.begin && end == range.end;
+	}
 }
 
 struct Index {
@@ -153,7 +156,7 @@ public:
 		immutable AST[] children,
 		immutable Range range
 	) immutable {
-		this(type,data,children,Index.disabled,Range(Index.disabled,Index.disabled),0);
+		this(type,data,children,Index.disabled,range,0);
 	}
 
 	this(
@@ -174,6 +177,7 @@ public:
 				data == ast.data &&
 				pos  == ast.pos  &&
 				range == ast.range &&
+				require_size == ast.require_size &&
 				children.length == ast.children.length &&
 				zip(children,ast.children)
 				.all!(a => a[0] == a[1]);
