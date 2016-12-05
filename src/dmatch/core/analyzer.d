@@ -81,7 +81,7 @@ immutable(AST) addRequiredSize(immutable AST array_p) in{
 }
 body {
 	auto size = array_p.children.map!(a => a.type == Type.Array_Elem ? a.children.length : 0).sum;
-	return immutable AST(Type.Array,"",array_p.children);
+	return immutable AST(Type.Array,"",array_p.children,size);
 }
 unittest {
 	import dmatch.core.parser : parse;
