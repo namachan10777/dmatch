@@ -112,13 +112,59 @@ public:
 	immutable AST[] children;
 	immutable Index pos;
 	immutable Range range;
-	this(immutable Type type,immutable string data,immutable AST[] children,immutable Index pos = Index.disabled,immutable Range range = Range(Index.disabled,Index.disabled)) immutable {
+	immutable size_t require_size;
+
+	this(
+		immutable Type type,
+		immutable string data,
+		immutable AST[] children,
+		immutable Index pos,
+		immutable Range range,
+		immutable size_t require_size
+	)immutable {
 		this.type = type;
 		this.data = data;
 		this.children = children;
 		this.pos = pos;
 		this.range = range;
+		this.require_size = require_size;
 	}
+
+	this(
+		immutable Type type,
+		immutable string data,
+		immutable AST[] children
+	) immutable {
+		this(type,data,children,Index.disabled,Range(Index.disabled,Index.disabled),0);
+	}
+
+	this(
+		immutable Type type,
+		immutable string data,
+		immutable AST[] children,
+		immutable Index pos 
+	) immutable {
+		this(type,data,children,pos,Range(Index.disabled,Index.disabled),0);
+	}
+
+	this(
+		immutable Type type,
+		immutable string data,
+		immutable AST[] children,
+		immutable Range range
+	) immutable {
+		this(type,data,children,Index.disabled,Range(Index.disabled,Index.disabled),0);
+	}
+
+	this(
+		immutable Type type,
+		immutable string data,
+		immutable AST[] children,
+		immutable size_t require_size
+	) immutable {
+		this(type,data,children,Index.disabled,Range(Index.disabled,Index.disabled),require_size);
+	}
+
 	string toString() immutable {
 		import std.string;
 		return format("AST( %s, %s, [%s], %s, %s)",type,'\"'~data~'\"',children.map!(a => a.toString).join(","),range,pos);

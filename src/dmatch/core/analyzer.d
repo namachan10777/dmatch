@@ -61,15 +61,15 @@ unittest {
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),
 					immutable AST(Type.Bind,"b",[],Index(1,false))]),
-				immutable AST(Type.Bind,"c",[],Index.disabled,Range(Index(2,false),Index(0,true)))]),
+				immutable AST(Type.Bind,"c",[],Range(Index(2,false),Index(0,true)))],2),
 			immutable AST(Type.If,"true",[])]));
 	static assert ("a~[b]~[c]".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
-				immutable AST(Type.Bind,"a",[],Index.disabled,Range(Index(0,false),Index(1,true))),
+				immutable AST(Type.Bind,"a",[],Range(Index(0,false),Index(1,true))),
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"b",[],Index(1,true)),
-					immutable AST(Type.Bind,"c",[],Index(0,true))])]),
+					immutable AST(Type.Bind,"c",[],Index(0,true))])],2),
 			immutable AST(Type.If,"true",[])]));
 	static assert((){assertThrown!ValidPatternException(
 		"a~[b]~c".parse.analyze,
@@ -89,17 +89,17 @@ body {
 	case 2:
 		if (array_p.children[0].type == Type.Array_Elem) {
 			immutable bind = array_p.children[1];
-			auto slice = immutable AST(bind.type,bind.data,bind.children,Index.disabled,Range(array_p.children[0].children[$-1].pos + 1,Index(0,true)));
+			auto slice = immutable AST(bind.type,bind.data,bind.children,Range(array_p.children[0].children[$-1].pos + 1,Index(0,true)));
 			return immutable AST(Type.Array,array_p.data,[array_p.children[0],slice]);
 		}
 		else {
 			immutable bind = array_p.children[0];
-			auto slice = immutable AST(bind.type,bind.data,bind.children,Index.disabled,Range(Index(0,false),array_p.children[1].children[0].pos));
+			auto slice = immutable AST(bind.type,bind.data,bind.children,Range(Index(0,false),array_p.children[1].children[0].pos));
 			return immutable AST(Type.Array,array_p.data,[slice,array_p.children[1]]);
 		}
 	case 3:
 			immutable bind = array_p.children[1];
-			auto slice = immutable AST(bind.type,bind.data,bind.children,Index.disabled,
+			auto slice = immutable AST(bind.type,bind.data,bind.children,
 										Range(array_p.children[0].children[$-1].pos + 1,array_p.children[2].children[0].pos));
 			return immutable AST(Type.Array,array_p.data,[array_p.children[0],slice,array_p.children[2]]);
 	default:
@@ -113,10 +113,10 @@ unittest {
 				immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"a",[],Index(0,false)),
 						immutable AST(Type.Bind,"b",[],Index(1,false))]),
-					immutable AST(Type.Bind,"c",[],Index.disabled,Range(Index(2,false),Index(0,true)))]));
+					immutable AST(Type.Bind,"c",[],Range(Index(2,false),Index(0,true)))]));
 	static assert ("a~[b,c]".parse.children[0].addIndex.addSlice ==
 			immutable AST(Type.Array,"",[
-					immutable AST(Type.Bind,"a",[],Index.disabled,Range(Index(0,false),Index(1,true))),
+					immutable AST(Type.Bind,"a",[],Range(Index(0,false),Index(1,true))),
 					immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"b",[],Index(1,true)),
 						immutable AST(Type.Bind,"c",[],Index(0,true))])]));
@@ -125,7 +125,7 @@ unittest {
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),]),
-				immutable AST(Type.Bind,"b",[],Index.disabled,Range(Index(1,false),Index(0,true))),
+				immutable AST(Type.Bind,"b",[],Range(Index(1,false),Index(0,true))),
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"c",[],Index(0,true))])]));
 }
