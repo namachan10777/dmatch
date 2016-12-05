@@ -96,37 +96,34 @@ unittest {
 			== 3);
 }
 
-immutable(string) generate(immutable AST tree,immutable string parent,immutable string code = "") {
+immutable(AST) shaveChildren(immutable AST ast) {
+	return immutable AST(ast.type,ast.data,ast.children[1..$],ast.pos);
+}
+
+immutable(string) generate(immutable AST[] tree,immutable string parent,immutable string code = "") {
 	import std.format;
-	final switch(tree.type) {
+	if (tree.length == 0) return "";
+	final switch(tree[0].type) {
 	case Type.Bind :
-		return format("auto %s = %s;",tree.data,parent);
+		//Bindパターンのみが配列のスライスを受け取る可能性があるので
+		if (tree[0].range.begin.enabled)
+			return format("auto %s = %s[%s]",tree[0].data,parent,tree[0].range.toString) ~ generate(tree[1..$],parent,code);
+		return format("auto %s = %s;",tree[0].data,parent) ~ generate(tree[1..$],parent,code);
 	case Type.Record :
-		return tree.children.map!(a => a.generate(parent)).join;
+		if (tree.length == 0) return "";
+		return generate(tree[0].children,parent,code) ~ generate(tree[1..$],parent,code);
 	case Type.Pair :
-		return tree.children[0].generate(format("%s.%s",parent,tree.data));
+		return generate(tree[0].children,format("%s.%s",parent,tree[0].data),code) ~ generate(tree[1..$],parent,code);
 	case Type.Root :
-		return tree.children.map!(a => a.generate(parent,code)).join;
+		return generate(tree[0].children,parent,code); 
 	case Type.If :
-		return format("if(%s){%s}",tree.data,code);
+		return format("if(%s){%s}",tree[0].data,code);
 	case Type.As :
-		return tree.children.map!(a => a.generate(parent,code)).join;	
+		return generate(tree[0].children,parent,code);
 	case Type.Array :
-		if (tree.children.length == 1) {
-			return tree.children[0].generate(parent);
-		}
-		else {
-			if (tree.children[0].type == Type.Bind) {
-				immutable otherSide = tree.children[0].generate(parent ~ format("[%s]",tree.children[1].children[0].pos.otherSide));
-				return otherSide ~ tree.children[1].generate(parent);
-			}
-			else {
-				immutable otherSide = tree.children[1].generate(parent ~ format("[%s]",tree.children[0].children[$-1].pos.otherSide));
-				return otherSide ~ tree.children[0].generate(parent);
-			}
-		}
+		return format("if(%s.length >= %d){%s}",parent,tree[0].require_size,generate(tree[0].children,parent,code) ~ generate(tree[1..$],parent,code));
 	case Type.Array_Elem :
-		return tree.children.map!(a => generate(a,parent ~ format("[%s]",a.pos))).join;
+		return tree[0].children.map!(a => generate([a],format("%s[%s]",parent,a.pos))).join ~ generate(tree[1..$],parent,code);
 	case Type.Range :
 	case Type.Empty :
 	case Type.Variant :
@@ -137,9 +134,10 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 }
 
 unittest {
-	static assert ("x".parse.generate("arg") == "auto x = arg;");
-	static assert ("{{x=b}=a,y=b}".parse.generate("arg") == "auto x = arg.a.b;auto y = arg.b;");
-	static assert ("x if (x > 10)".parse.generate("arg","return x;") == "auto x = arg;if(x > 10){return x;}");
-	static assert ("{a=b} @ c".parse.generate("arg") == "auto a = arg.b;auto c = arg;");
-	static assert ("[a,b,c]~d".parse.analyze.generate("arg") == "auto d = arg[3..$];auto a = arg[0];auto b = arg[1];auto c = arg[2];if(true){}");
+	static assert (["x".parse].generate("arg") == "auto x = arg;");
+	static assert (["{{x=b}=a,y=b}".parse].generate("arg") == "auto x = arg.a.b;auto y = arg.b;");
+	static assert (["x if (x > 10)".parse].generate("arg","return x;") == "auto x = arg;if(x > 10){return x;}");
+	static assert (["{a=b} @ c".parse].generate("arg") == "auto a = arg.b;auto c = arg;");
+	static assert (["[a,b,c]~d".parse.analyze].generate("arg") ==
+		"if(arg.length >= 3){auto a = arg[0];auto b = arg[1];auto c = arg[2];auto d = arg[3..$-0]if(true){}}");
 }
