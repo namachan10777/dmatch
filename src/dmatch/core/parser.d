@@ -248,14 +248,15 @@ immutable(Src) term(Type type,alias p)(immutable Src src) {
 string tree2str(inout AST ast,string indent = "  ") {
 	import std.format;
 	import std.string;
+	auto require_size = ast.type == Type.Array ? format("(require_size = %s) ",ast.require_size) : "";
 	if (ast.pos.enabled)
-		return format("%s : \"%s\" (pos = \"%s\")\n",ast.type,ast.data,ast.pos)
+		return format("%s : \"%s\" (pos = \"%s\") %s\n",ast.type,ast.data,ast.pos,require_size)
 			~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 	else if (ast.range.begin.enabled)
-		return format("%s : \"%s\" (range = \"%s\")\n",ast.type,ast.data,ast.range)
+		return format("%s : \"%s\" (range = \"%s\") %s\n",ast.type,ast.data,ast.range,require_size)
 			~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 	else
-		return format("%s : \"%s\"\n",ast.type,ast.data)
+		return format("%s : \"%s\" %s\n",ast.type,ast.data,require_size)
 			~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 }
 
