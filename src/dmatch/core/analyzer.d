@@ -41,7 +41,7 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 			return immutable AST(Type.Empty,"",[],tree.pos);
 		}
 		else{
-			return tree.normalizeArrayPattern.addIndex.addSlice;
+			return tree.normalizeArrayPattern.addIndex.addSlice.addRequiredSize;
 		}
 
 	case Type.Array_Elem :
@@ -74,6 +74,25 @@ unittest {
 	static assert((){assertThrown!ValidPatternException(
 		"a~[b]~c".parse.analyze,
 		"cannot decison range of bind pattern inarray");return true;}());
+}
+
+immutable(AST) addRequiredSize(immutable AST array_p) in{
+	assert (array_p.type == Type.Array);
+}
+body {
+	auto size = array_p.children.map!(a => a.type == Type.Array_Elem ? a.children.length : 0).sum;
+	return immutable AST(Type.Array,"",array_p.children);
+}
+unittest {
+	import dmatch.core.parser : parse;
+	static assert ("a~[b,c,d]".parse.children[0].addRequiredSize ==
+		immutable AST(Type.Array,"",[
+			immutable AST(Type.Bind,"a",[]),
+			immutable AST(Type.Array_Elem,"",[
+				immutable AST(Type.Bind,"b",[]),
+				immutable AST(Type.Bind,"c",[]),
+				immutable AST(Type.Bind,"d",[])])],
+			3));
 }
 
 //addIndexされてると言う前提
