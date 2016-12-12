@@ -49,6 +49,8 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 			gen.seed(hash_2);
 			immutable name_2 = uniform(0,uint.max,gen).to!string;
 			return typeof(return)(immutable AST(Type.Bind,name_1~name_2,[],tree.pos),[format("%s == %s",name_1~name_2,tree.data)]);
+		case Type.Range_Tails :
+			assert(0);
 	}
 }
 
@@ -100,44 +102,52 @@ immutable(AST) shaveChildren(immutable AST ast) {
 	return immutable AST(ast.type,ast.data,ast.children[1..$],ast.pos);
 }
 
-immutable(string) generate(immutable AST[] tree,immutable string parent,immutable string code = "") {
+immutable(string) generate(immutable AST[] forest,immutable string parent,immutable string addtion) {
 	import std.format;
-	if (tree.length == 0) return "";
-	final switch(tree[0].type) {
-	case Type.Bind :
-		//Bindパターンのみが配列のスライスを受け取る可能性があるので
-		if (tree[0].range.begin.enabled)
-			return format("auto %s = %s[%s]",tree[0].data,parent,tree[0].range.toString) ~ generate(tree[1..$],parent,code);
-		return format("auto %s = %s;",tree[0].data,parent) ~ generate(tree[1..$],parent,code);
-	case Type.Record :
-		if (tree.length == 0) return "";
-		return generate(tree[0].children,parent,code) ~ generate(tree[1..$],parent,code);
-	case Type.Pair :
-		return generate(tree[0].children,format("%s.%s",parent,tree[0].data),code) ~ generate(tree[1..$],parent,code);
+	if (forest.length == 0) return addtion;
+	auto head = forest[0];
+	auto tails = forest[1..$];
+	final switch(head.type) {
 	case Type.Root :
-		return generate(tree[0].children,parent,code); 
+		"head.children[0]".writeln;
+		head.children[0].tree2str.writeln;
+		return generate([head.children[0]],parent,generate(head.children[1..$],parent,addtion));
 	case Type.If :
-		return format("if(%s){%s}",tree[0].data,code);
+		return format("if(%s){%s}",head.data,addtion);
+	case Type.Bind :
+		if (head.range.begin.enabled) {
+			return format("auto %s=%s[%s];%s",head.data,parent,head.range.toString,generate(tails,parent,addtion));
+		}
+		return format("auto %s=%s;%s",head.data,parent,generate(tails,parent,addtion));
 	case Type.As :
-		return generate(tree[0].children,parent,code);
-	case Type.Array :
-		return format("if(%s.length >= %d){%s}",parent,tree[0].require_size,generate(tree[0].children,parent,code) ~ generate(tree[1..$],parent,code));
-	case Type.Array_Elem :
-		return tree[0].children.map!(a => generate([a],format("%s[%s]",parent,a.pos))).join ~ generate(tree[1..$],parent,code);
+		return generate(head.children,parent,generate(tails,parent,addtion));
 	case Type.Range :
-	case Type.Empty :
+		auto shaved = immutable AST(Type.Range_Tails,head.data,head.children[1..$],head.pos,head.range,head.require_size);
+		auto saved_name = format("__%s_saved__",parent);
+		return format("if(!%s.empty){auto %s=%s;%s}",parent,saved_name,parent,
+					generate([head.children[0]],saved_name~".front",
+					generate([shaved],saved_name,
+					generate(tails,parent,addtion))));
+	case Type.Range_Tails :
+		if (head.children.length == 1) return generate([head.children[0]],parent,generate(tails,parent,addtion));
+		auto shaved = immutable AST(Type.Range_Tails,head.data,head.children[1..$],head.pos,head.range,head.require_size);
+		return format("if(!%s.empty){%s}",parent,generate([head.children[0]],parent~".front",parent~".popFront;"~generate(shaved~tails,parent,addtion)));
+	case Type.Array :
+		return format("if(%s.length>=%d){%s}",parent,head.require_size,head.children.generate(parent,addtion));
+	case Type.Array_Elem :
+		auto s = head.children.map!(a => generate([a],format("%s[%s]",parent,a.pos.toString),"%s")).fold!((a,b) => format(a,b));
+		return format(s,generate(tails,parent,addtion));
+	case Type.Record :
+		return head.children.generate(parent,generate(tails,parent,addtion));
+	case Type.Pair :
+		return head.children.generate(parent~"."~head.data,generate(tails,parent,addtion));
 	case Type.Variant :
+		return format("if(%s.type==typeid(%s)){%s}",parent,head.data,head.children.generate(format("%s.get!(%s)"),generate(tails,parent,addtion)));
+	case Type.Empty :
+	case Type.RVal :
 		return "";
-	case Type.RVal:
-		assert(false);
 	}
 }
 
 unittest {
-	static assert (["x".parse].generate("arg") == "auto x = arg;");
-	static assert (["{{x=b}=a,y=b}".parse].generate("arg") == "auto x = arg.a.b;auto y = arg.b;");
-	static assert (["x if (x > 10)".parse].generate("arg","return x;") == "auto x = arg;if(x > 10){return x;}");
-	static assert (["{a=b} @ c".parse].generate("arg") == "auto a = arg.b;auto c = arg;");
-	static assert (["[a,b,c]~d".parse.analyze].generate("arg") ==
-		"if(arg.length >= 3){auto a = arg[0];auto b = arg[1];auto c = arg[2];auto d = arg[3..$-0]if(true){}}");
 }

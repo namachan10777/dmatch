@@ -25,6 +25,8 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 	case Type.Empty :
 		return  tree;
 
+	case Type.Range_Tails :
+		assert (0);
 	case Type.As :
 	case Type.Range :
 	case Type.Pair :
