@@ -67,7 +67,7 @@ unittest {
 							immutable AST(Type.Bind,"a",[]),
 							immutable AST(Type.If,"a < 10",[])]);
 	enum condtions = ["a > -10","a % 3 == 0"];
-	static assert (linkGuard(tree,condtions) ==
+	assert (linkGuard(tree,condtions) ==
 			immutable AST(Type.Root,"",[
 				immutable AST(Type.Bind,"a",[]),
 				immutable AST(Type.If,"a < 10&&a > -10&&a % 3 == 0",[])]));
@@ -81,14 +81,14 @@ body{
 	return tree.children.map!(a => a.type == Type.Array_Elem ? a.children.length : 0).fold!"a+b"(0LU);
 }
 unittest {
-	static assert (min_array_size(immutable AST(Type.Array,"",[
+	assert (min_array_size(immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[]),
 					immutable AST(Type.Bind,"b",[]),
 					immutable AST(Type.Bind,"c",[])]),
 				immutable AST(Type.Bind,"d",[])]))
 			== 3);
-	static assert (min_array_size(immutable AST(Type.Array,"",[
+	assert (min_array_size(immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[]),
 					immutable AST(Type.Bind,"b",[]),

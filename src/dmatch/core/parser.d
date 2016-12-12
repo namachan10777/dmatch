@@ -66,7 +66,7 @@ immutable(Src) any(immutable Src src) {
 }
 unittest {
 	immutable r = Src("Dman is"," so cute.").any.any.any.any;
-	static assert (r.ate == "Dman is so " && r.dish == "cute." && r.succ);
+	assert (r.ate == "Dman is so " && r.dish == "cute." && r.succ);
 }
 
 //same : Src -> char -> Src
@@ -77,8 +77,8 @@ immutable(Src) same(alias charcter)(immutable Src src) {
 	return src.failed;
 }
 unittest {
-	static assert (Src("Dman is ", "so cute.").same!'a' == Src("Dman is ", "so cute.", false));
-	static assert (Src("Dman is ", "so cute.").same!'s' == Src("Dman is s", "o cute.", true));
+	assert (Src("Dman is ", "so cute.").same!'a' == Src("Dman is ", "so cute.", false));
+	assert (Src("Dman is ", "so cute.").same!'s' == Src("Dman is s", "o cute.", true));
 }
 
 immutable(Src) str(alias token)(immutable Src src) {
@@ -91,8 +91,8 @@ immutable(Src) str(alias token)(immutable Src src) {
 	return Src(src.ate~src.dish[0..idx+1],src.dish[idx+1..$],true,src.trees,src.stack);
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").str!"so cute" == Src("Dman is so cute",".",true));
-	static assert (Src("Dman is ","so cute.").str!"so cool" == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").str!"so cute" == Src("Dman is so cute",".",true));
+	assert (Src("Dman is ","so cute.").str!"so cool" == Src("Dman is ","so cute.",false));
 }
 
 //rng : char[] -> Src -> Src
@@ -105,8 +105,8 @@ immutable(Src) rng(alias candidate)(immutable Src src) {
 	return src.failed;
 }
 unittest {
-	static assert (Src("Dman is ", "so cute.").rng!(['a','b','c']) == Src("Dman is ","so cute.",false));
-	static assert (Src("Dman is ", "so cute.").rng!(['o','p','s']) == Src("Dman is s","o cute.",true));
+	assert (Src("Dman is ", "so cute.").rng!(['a','b','c']) == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ", "so cute.").rng!(['o','p','s']) == Src("Dman is s","o cute.",true));
 }
 
 //or : 'f ... -> Src -> Src
@@ -123,9 +123,9 @@ immutable(Src) or(ps...)(immutable Src src) {
 	}
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").or!(same!'o',same!'p',same!'s',same!'q')
+	assert (Src("Dman is ","so cute.").or!(same!'o',same!'p',same!'s',same!'q')
 		== Src("Dman is s","o cute.",true));
-	static assert (Src("Dman is ","so cute.").or!(same!'a',same!'b',same!'c',same!'d')
+	assert (Src("Dman is ","so cute.").or!(same!'a',same!'b',same!'c',same!'d')
 		== Src("Dman is ","so cute.",false));
 }
 
@@ -136,8 +136,8 @@ immutable(Src) not(alias p)(immutable Src src) {
 	return Src(src.ate,src.dish,!parsed.succ,src.trees,src.stack);
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").not!(same!'s') == Src("Dman is ","so cute.",false));
-	static assert (Src("Dman is ","so cute.").not!(same!'a') == Src("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").not!(same!'s') == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").not!(same!'a') == Src("Dman is ","so cute.",true));
 }
 
 //and : 'f -> Src -> Src
@@ -147,16 +147,16 @@ immutable(Src) and(alias p)(immutable Src src) {
 	return Src(src.ate,src.dish,parsed.succ,src.trees,src.stack);
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").and!(same!'s') == Src("Dman is ","so cute.",true));
-	static assert (Src("Dman is ","so cute.").and!(same!'a') == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").and!(same!'s') == Src("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").and!(same!'a') == Src("Dman is ","so cute.",false));
 }
 
 //many : 'f -> Src -> Src
 //一回以上述語fを実行してその結果を返す
 alias many(alias p) = seq!(p,rep!p);
 unittest {
-	static assert (Src("Dman is ","so cute.").many!(rng!"so") == Src("Dman is so"," cute.",true));
-	static assert (Src("Dman is ","so cute.").many!(rng!"ab") == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").many!(rng!"so") == Src("Dman is so"," cute.",true));
+	assert (Src("Dman is ","so cute.").many!(rng!"ab") == Src("Dman is ","so cute.",false));
 }
 
 //rep : 'f -> Src -> Src
@@ -172,8 +172,8 @@ immutable(Src) rep(alias p)(immutable Src src) {
 	return rep_impl(src,[]);
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").rep!(rng!"so") == Src("Dman is so"," cute.",true));
-	static assert (Src("Dman is ","so cute.").rep!(rng!"ab") == Src("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").rep!(rng!"so") == Src("Dman is so"," cute.",true));
+	assert (Src("Dman is ","so cute.").rep!(rng!"ab") == Src("Dman is ","so cute.",true));
 }
 
 //opt : 'f -> Src -> Src
@@ -183,8 +183,8 @@ immutable(Src) opt(alias p)(immutable Src src) {
 	return Src(parsed.ate, parsed.dish, true, parsed.trees, parsed.stack);
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").opt!(same!'s') == Src("Dman is s","o cute.",true));
-	static assert (Src("Dman is ","so cute.").opt!(same!'a') == Src("Dman is ","so cute.",true));
+	assert (Src("Dman is ","so cute.").opt!(same!'s') == Src("Dman is s","o cute.",true));
+	assert (Src("Dman is ","so cute.").opt!(same!'a') == Src("Dman is ","so cute.",true));
 }
 
 //seq : 'f... -> Src -> Src
@@ -207,8 +207,8 @@ immutable(Src) seq(ps...)(immutable Src init) {
 	return seq_impl!ps(init,[]);
 }
 unittest {
-	static assert (Src("Dman is ","so cute.").seq!(same!'s',same!'o') == Src("Dman is so"," cute.",true));
-	static assert (Src("Dman is ","so cute.").seq!(same!'s',same!'O') == Src("Dman is ","so cute.",false));
+	assert (Src("Dman is ","so cute.").seq!(same!'s',same!'o') == Src("Dman is so"," cute.",true));
+	assert (Src("Dman is ","so cute.").seq!(same!'s',same!'O') == Src("Dman is ","so cute.",false));
 }
 
 //ateを捨てる
@@ -218,10 +218,10 @@ immutable(Src) omit(alias p)(immutable Src src) {
 	return Src(parsed.ate[0..before_size],parsed.dish,parsed.succ,parsed.trees,parsed.stack);
 }
 unittest {
-	static assert(Src("","c",true).omit!(same!'c') == Src("","",true));
-	static assert(Src("ab","cd",true).omit!(same!'c') == Src("ab","d",true));
-	static assert(Src("ab","cd").omit!(same!'e') == Src("ab","cd",false));
-	static assert(Src("a  b").seq!(same!'a',omit!emp,same!'b') == Src("ab","",true));
+	assert(Src("","c",true).omit!(same!'c') == Src("","",true));
+	assert(Src("ab","cd",true).omit!(same!'c') == Src("ab","d",true));
+	assert(Src("ab","cd").omit!(same!'e') == Src("ab","cd",false));
+	assert(Src("a  b").seq!(same!'a',omit!emp,same!'b') == Src("ab","",true));
 }
 
 //子をまとめて親を作る
@@ -267,9 +267,9 @@ alias sp = rng!("!\"#$%&'()-=~^|\\{[]}@`*:+;?/.><, \t\n\r");
 //symbol <- (!(sp / [0-9]) .) (!sp .)
 alias symbol = seq!(seq!(not!(or!(sp,rng!digits)),any),rep!(seq!(not!sp,any)));
 unittest {
-	static assert (Src("i").symbol == Src("i","",true));
-	static assert (Src("_Abc_100_!").symbol == Src("_Abc_100_","!",true));
-	static assert (Src("0_a").symbol == Src("","0_a",false));
+	assert (Src("i").symbol == Src("i","",true));
+	assert (Src("_Abc_100_!").symbol == Src("_Abc_100_","!",true));
+	assert (Src("0_a").symbol == Src("","0_a",false));
 }
 
 //literal
@@ -283,26 +283,26 @@ alias floating = or!(
 		seq!(many!(rng!digits),same!'.',rep!(rng!digits))
 	);
 unittest {
-	static assert (Src("3.14f").floating == Src("3.14f","",true));
-	static assert (Src("1.").floating == Src("1.","",true));
-	static assert (Src(".1").floating == Src(".1","",true));
+	assert (Src("3.14f").floating == Src("3.14f","",true));
+	assert (Src("1.").floating == Src("1.","",true));
+	assert (Src(".1").floating == Src(".1","",true));
 }
 //integral <- "0x" [0-9]+ / [1-9] / [0-9]+ ("LU" / 'L' / 'U')?
 alias integral = seq!(or!(seq!(str!"0x",many!(rng!digits)),many!(rng!digits)),opt!(or!(str!"LU",same!'L',same!'U')));
 unittest {
-	static assert (Src("0x12LU").integral == Src("0x12LU","",true));
+	assert (Src("0x12LU").integral == Src("0x12LU","",true));
 }
 alias num = or!(floating,integral);
 
 //strLit <- '"' ("\""? !('"' .))* '"'
 alias strLit = seq!(same!'\"',rep!(seq!(opt!(same!'a'),not!(same!'\"'),any)),same!'\"');
 unittest {
-	static assert (Src("\"abc\\\"").strLit == Src("\"abc\\\"","",true));
+	assert (Src("\"abc\\\"").strLit == Src("\"abc\\\"","",true));
 }
 //charLit <- ''' '\'? . '''
 alias charLit = seq!(same!'\'',opt!(same!'\\'),any,same!'\'');
 unittest {
-	static assert (Src(q{'\r'}).charLit == Src(q{'\r'},"",true));
+	assert (Src(q{'\r'}).charLit == Src(q{'\r'},"",true));
 }
 
 immutable(Src) quote(immutable Src src) {
@@ -317,13 +317,13 @@ immutable(Src) quote(immutable Src src) {
 	return src.failed;
 }
 unittest {
-	static assert (Src("q{abc}").quote == Src("q{abc}","",true));
+	assert (Src("q{abc}").quote == Src("q{abc}","",true));
 }
 
 alias null_ = seq!(str!"null",and!sp);
 unittest {
-	static assert (Src("null@").null_ == Src("null","@",true));
-	static assert (Src("null_").null_ == Src("","null_",false));
+	assert (Src("null@").null_ == Src("null","@",true));
+	assert (Src("null_").null_ == Src("","null_",false));
 }
 
 alias literal = or!(num,charLit,strLit,null_);
@@ -338,7 +338,7 @@ Src template_ (Src src) {
 			seq!(same!'(',emp,or!(template_,symbol,literal),rep!(seq!(same!',',emp,or!(template_,symbol,literal),emp)),same!')')))(src);
 }
 unittest {
-	static assert (Src("Tuple!(Hoge!T,int)").template_ == Src("Tuple!(Hoge!T,int)","",true));
+	assert (Src("Tuple!(Hoge!T,int)").template_ == Src("Tuple!(Hoge!T,int)","",true));
 }
 
 /+
@@ -349,16 +349,16 @@ immutable(Src) func(immutable Src src) {
 		same!'(',opt!(seq!(emp,or!(literal,func,template_,symbol),rep!(seq!(emp,same!',',emp,or!(literal,func,template_,symbol))),emp)),same!')')(src);
 }
 unittest {
-	static assert(Src("foo (hoge!x, 0x12 ,hoge(foo))").func == Src("foo (hoge!x, 0x12 ,hoge(foo))","",true));
+	assert(Src("foo (hoge!x, 0x12 ,hoge(foo))").func == Src("foo (hoge!x, 0x12 ,hoge(foo))","",true));
 }
 
 alias rval_p = term!(Type.RVal,or!(func,literal));
 unittest {
-	static assert(Src("0x12").rval_p.trees == [immutable AST(Type.RVal,"0x12",[])]);
+	assert(Src("0x12").rval_p.trees == [immutable AST(Type.RVal,"0x12",[])]);
 }
 alias bind_p = term!(Type.Bind,symbol);
 unittest {
-	static assert(Src("__abc123").bind_p.trees == [immutable AST(Type.Bind,"__abc123",[])]);
+	assert(Src("__abc123").bind_p.trees == [immutable AST(Type.Bind,"__abc123",[])]);
 }
 
 //if (/+この部分+/)　を抜き出す
@@ -385,8 +385,8 @@ immutable(Src) withdraw(immutable Src src) {
 	}
 }
 unittest {
-	static assert(Src("  ( ( a+b)* )c").withdraw == Src(" ( a+b)* ","c",true));
-	static assert(Src("  ( ( a+b* c").withdraw == Src("","  ( ( a+b* c",false));
+	assert(Src("  ( ( a+b)* )c").withdraw == Src(" ( a+b)* ","c",true));
+	assert(Src("  ( ( a+b* c").withdraw == Src("","  ( ( a+b* c",false));
 }
 
 // if (x > 2)
@@ -396,8 +396,8 @@ immutable(Src) guard_p (immutable Src src) {
 	else return src.failed;
 }
 unittest {
-	static assert(Src("if (a > 2)").guard_p.trees == [immutable AST(Type.If,"a > 2",[])]);
-	static assert(Src("if (a > 2 ").guard_p == Src("","if (a > 2 ",false));
+	assert(Src("if (a > 2)").guard_p.trees == [immutable AST(Type.If,"a > 2",[])]);
+	assert(Src("if (a > 2 ").guard_p == Src("","if (a > 2 ",false));
 }
 
 //a @ b @ c
@@ -406,21 +406,21 @@ immutable(Src) as_p(immutable Src src) {
 	return src.node!(Type.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
 }
 unittest {
-	static assert(Src("a @ b").as_p.trees == [immutable AST(Type.As,"",[immutable AST(Type.Bind,"a",[]),immutable AST(Type.Bind,"b",[])])]);
-	static assert(Src("a @ ").as_p == Src("","a @ ",false));
+	assert(Src("a @ b").as_p.trees == [immutable AST(Type.As,"",[immutable AST(Type.Bind,"a",[]),immutable AST(Type.Bind,"b",[])])]);
+	assert(Src("a @ ").as_p == Src("","a @ ",false));
 }
 
 // [a,b,c]
 immutable(Src) array_elem_p(immutable Src src) {
-	alias pattern = or!(as_p,array_p,bracket_p,rval_p,bind_p,);
+	alias pattern = or!(as_p,array_p,bracket_p,record_p,rval_p,bind_p,);
 	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp)),omit!(same!']')));
 }
 unittest {
-	static assert(Src("[a,b]").array_elem_p.trees ==
+	assert(Src("[a,b]").array_elem_p.trees ==
 		[immutable AST(Type.Array_Elem,"",[immutable AST(Type.Bind,"a",[]),immutable AST(Type.Bind,"b",[])])]);
-	static assert(Src("[]").array_elem_p.trees ==
+	assert(Src("[]").array_elem_p.trees ==
 		[immutable AST(Type.Array_Elem,"",[])]);
-	static assert(Src("[,]").array_elem_p == Src("","[,]",false));
+	assert(Src("[,]").array_elem_p == Src("","[,]",false));
 }
 
 //[a,b,c] ~ d
@@ -431,11 +431,11 @@ immutable(Src) array_p(immutable Src src) {
 		array_elem_p));
 }
 unittest {
-	static assert(Src("[a]~[]").array_p.trees == [
+	assert(Src("[a]~[]").array_p.trees == [
 		immutable AST(Type.Array,"",[
 			immutable AST(Type.Array_Elem,"",[immutable AST(Type.Bind,"a",[])]),
 			immutable AST(Type.Array_Elem,"",[])])]);
-	static assert(Src("~[a]").array_p == Src("","~[a]",false));
+	assert(Src("~[a]").array_p == Src("","~[a]",false));
 }
 
 //a::b::c
@@ -444,8 +444,8 @@ immutable(Src) range_p(immutable Src src) {
 	return src.node!(Type.Range,seq!(pattern,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,pattern))));
 }
 unittest {
-	static assert(Src("x::xs").range_p.trees == [immutable AST(Type.Range,"",[immutable AST(Type.Bind,"x",[]),immutable AST(Type.Bind,"xs",[])])]);
-	static assert(Src("x::").range_p == Src("","x::",false));
+	assert(Src("x::xs").range_p.trees == [immutable AST(Type.Range,"",[immutable AST(Type.Bind,"x",[]),immutable AST(Type.Bind,"xs",[])])]);
+	assert(Src("x::").range_p == Src("","x::",false));
 }
 
 //a : c
@@ -454,8 +454,8 @@ immutable(Src) variant_p(immutable Src src) {
 	return src.node!(Type.Variant,seq!(pattern,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
 }
 unittest {
-	static assert (Src("x:A").variant_p.trees == [immutable AST(Type.Variant,"A",[immutable AST(Type.Bind,"x",[])])]);
-	static assert (Src(":A").variant_p == Src("",":A",false));
+	assert (Src("x:A").variant_p.trees == [immutable AST(Type.Variant,"A",[immutable AST(Type.Bind,"x",[])])]);
+	assert (Src(":A").variant_p == Src("",":A",false));
 }
 
 //{a = b,c = d}
@@ -465,7 +465,7 @@ immutable(Src) record_p(immutable Src src) {
 	return src.node!(Type.Record,seq!(omit!(same!'{'),omit!emp,pair_p,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pair_p,omit!emp)),omit!emp,omit!(same!'}')));
 }
 unittest {
-	static assert (Src("{a = b,c = d}").record_p.trees == [
+	assert (Src("{a = b,c = d}").record_p.trees == [
 		immutable AST(Type.Record,"",[
 			immutable AST(Type.Pair,"b",[immutable AST(Type.Bind,"a",[])]),
 			immutable AST(Type.Pair,"d",[immutable AST(Type.Bind,"c",[])])])]);
@@ -477,8 +477,8 @@ immutable(Src) bracket_p(immutable Src src) {
 	return src.seq!(omit!(same!'('),omit!emp,pattern,omit!emp,omit!(same!')'));
 }
 unittest {
-	static assert (Src("(x::xs)").bracket_p == Src("x::xs").range_p);
-	static assert (Src("(x::)").bracket_p == Src("","(x::)",false));
+	assert (Src("(x::xs)").bracket_p == Src("x::xs").range_p);
+	assert (Src("(x::)").bracket_p == Src("","(x::)",false));
 }
 
 immutable(AST) parse(immutable string src) {
@@ -487,7 +487,7 @@ immutable(AST) parse(immutable string src) {
 	return parsed.trees[0];
 }
 unittest {
-	static assert ("x@y::xs if(x > 2)".parse ==
+	assert ("x@y::xs if(x > 2)".parse ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Range,"",[
 				immutable AST(Type.As,"",[

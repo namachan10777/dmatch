@@ -54,8 +54,8 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 unittest {
 	import dmatch.core.parser;
 	import std.exception : assertThrown;
-	static assert ("{a@e = e,x::(y::xs)@h=g}".parse.analyze == "{a@e = e,x::(y::xs)@h=g}if(true)".parse);
-	static assert ("[a]~[b]~c".parse.analyze ==
+	assert ("{a@e = e,x::(y::xs)@h=g}".parse.analyze == "{a@e = e,x::(y::xs)@h=g}if(true)".parse);
+	assert ("[a]~[b]~c".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
@@ -63,7 +63,7 @@ unittest {
 					immutable AST(Type.Bind,"b",[],Index(1,false))]),
 				immutable AST(Type.Bind,"c",[],Range(Index(2,false),Index(0,true)))],2),
 			immutable AST(Type.If,"true",[])]));
-	static assert ("a~[b]~[c]".parse.analyze ==
+	assert ("a~[b]~[c]".parse.analyze ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Bind,"a",[],Range(Index(0,false),Index(1,true))),
@@ -71,7 +71,7 @@ unittest {
 					immutable AST(Type.Bind,"b",[],Index(1,true)),
 					immutable AST(Type.Bind,"c",[],Index(0,true))])],2),
 			immutable AST(Type.If,"true",[])]));
-	static assert((){assertThrown!ValidPatternException(
+	assert((){assertThrown!ValidPatternException(
 		"a~[b]~c".parse.analyze,
 		"cannot decison range of bind pattern inarray");return true;}());
 }
@@ -85,7 +85,7 @@ body {
 }
 unittest {
 	import dmatch.core.parser : parse;
-	static assert ("a~[b,c,d]".parse.children[0].addRequiredSize ==
+	assert ("a~[b,c,d]".parse.children[0].addRequiredSize ==
 		immutable AST(Type.Array,"",[
 			immutable AST(Type.Bind,"a",[]),
 			immutable AST(Type.Array_Elem,"",[
@@ -127,20 +127,20 @@ body {
 }
 unittest {
 	import dmatch.core.parser : parse;
-	static assert("[a,b]~c".parse.children[0].addIndex.addSlice == 
+	assert("[a,b]~c".parse.children[0].addIndex.addSlice == 
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"a",[],Index(0,false)),
 						immutable AST(Type.Bind,"b",[],Index(1,false))]),
 					immutable AST(Type.Bind,"c",[],Range(Index(2,false),Index(0,true)))]));
-	static assert ("a~[b,c]".parse.children[0].addIndex.addSlice ==
+	assert ("a~[b,c]".parse.children[0].addIndex.addSlice ==
 			immutable AST(Type.Array,"",[
 					immutable AST(Type.Bind,"a",[],Range(Index(0,false),Index(1,true))),
 					immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"b",[],Index(1,true)),
 						immutable AST(Type.Bind,"c",[],Index(0,true))])]));
 	
-	static assert ("[a]~b~[c]".parse.children[0].addIndex.addSlice ==
+	assert ("[a]~b~[c]".parse.children[0].addIndex.addSlice ==
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),]),
@@ -181,27 +181,27 @@ body {
 }
 unittest {
 	import dmatch.core.parser : parse;
-	static assert("[a,b,c]".parse.children[0].addIndex ==
+	assert("[a,b,c]".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),
 					immutable AST(Type.Bind,"b",[],Index(1,false)),
 					immutable AST(Type.Bind,"c",[],Index(2,false))])]));
 
-	static assert ("[a,b]~c".parse.children[0].addIndex ==
+	assert ("[a,b]~c".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"a",[],Index(0,false)),
 						immutable AST(Type.Bind,"b",[],Index(1,false))]),
 					immutable AST(Type.Bind,"c",[])]));
 
-	static assert ("a~[b,c]".parse.children[0].addIndex ==
+	assert ("a~[b,c]".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 					immutable AST(Type.Bind,"a",[]),
 					immutable AST(Type.Array_Elem,"",[
 						immutable AST(Type.Bind,"b",[],Index(1,true)),
 						immutable AST(Type.Bind,"c",[],Index(0,true))])]));
-	static assert ("[a]~b~[c]".parse.children[0].addIndex ==
+	assert ("[a]~b~[c]".parse.children[0].addIndex ==
 			immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[],Index(0,false)),]),
@@ -231,7 +231,7 @@ body{
 	return immutable AST(Type.Array,"",merge(array_p.children));
 }
 unittest {
-	static assert ((immutable AST(Type.Array,"",[
+	assert ((immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[]),
 					immutable AST(Type.Bind,"b",[])]),
@@ -249,7 +249,7 @@ unittest {
 					immutable AST(Type.Bind,"d",[])]),
 				immutable AST(Type.Bind,"d",[])]));
 
-	static assert ((immutable AST(Type.Array,"",[
+	assert ((immutable AST(Type.Array,"",[
 				immutable AST(Type.Array_Elem,"",[
 					immutable AST(Type.Bind,"a",[])]),
 				immutable AST(Type.Bind,"b",[])]))
