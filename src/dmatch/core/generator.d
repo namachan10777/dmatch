@@ -76,6 +76,9 @@ unittest {
 				immutable AST(Type.If,"a < 10&&a > -10&&a % 3 == 0",[])]));
 }
 
+immutable(AST) rmRVal(immutable AST ast) {
+	auto r = ast.nameAssign;
+	return linkGuard(r[0],r[1]);
 }
 
 immutable(AST) shaveChildren(immutable AST ast) {
