@@ -110,8 +110,6 @@ immutable(string) generate(immutable AST[] forest,immutable string parent,immuta
 	auto tails = forest[1..$];
 	final switch(head.type) {
 	case Type.Root :
-		"head.children[0]".writeln;
-		head.children[0].tree2str.writeln;
 		return generate([head.children[0]],parent,generate(head.children[1..$],parent,addtion));
 	case Type.If :
 		return format("if(%s){%s}",head.data,addtion);
