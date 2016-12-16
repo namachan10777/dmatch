@@ -54,14 +54,15 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 	}
 }
 
+//analyzeを通ってるはず
 immutable(AST) linkGuard(immutable AST tree,immutable string[] condtions)
 in{
 	assert (tree.type == Type.Root);
 }
 body{
-	immutable guard = tree.children.length == 2 ?
+	immutable guard = condtions.length > 0 ?
 					immutable AST(Type.If,tree.children[1].data ~ "&&" ~ condtions.join("&&"),[]) :
-					immutable AST(Type.If,                        	     condtions.join("&&"),[]);
+					immutable AST(Type.If,tree.children[1].data                              ,[]);
 	return immutable AST(Type.Root,"",[tree.children[0],guard]);
 }
 unittest {
