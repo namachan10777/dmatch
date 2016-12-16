@@ -124,7 +124,7 @@ immutable(string) generate(immutable AST[] forest,immutable string parent,immuta
 	case Type.Range :
 		auto shaved = immutable AST(Type.Range_Tails,head.data,head.children[1..$],head.pos,head.range,head.require_size);
 		auto saved_name = format("__%s_saved__",parent);
-		return format("if(!%s.empty){auto %s=%s;%s}",parent,saved_name,parent,
+		return format("if(!%s.empty){auto %s=%s.save;%s}",parent,saved_name,parent,
 					generate([head.children[0]],saved_name~".front",
 					generate([shaved],saved_name,
 					generate(tails,parent,addtion))));
