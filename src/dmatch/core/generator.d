@@ -135,7 +135,10 @@ immutable(string) generate(immutable AST[] forest,immutable string parent,immuta
 	case Type.Array :
 		return format("if(%s.length>=%d){%s}",parent,head.require_size,head.children.generate(parent,addtion));
 	case Type.Array_Elem :
-		auto s = head.children.map!(a => generate([a],format("%s[%s]",parent,a.pos.toString),"%s")).fold!((a,b) => format(a,b));
+		auto s = head
+					.children
+					.map!(a => generate([a],format("%s[%s]",parent,a.pos.toString),"%s"))
+					.fold!((a,b) => format(a,b))("%s");
 		return format(s,generate(tails,parent,addtion));
 	case Type.Record :
 		return head.children.generate(parent,generate(tails,parent,addtion));
