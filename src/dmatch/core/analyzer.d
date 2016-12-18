@@ -18,39 +18,39 @@ static class ValidPatternException : Exception {
 }
 
 immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
-	final switch(tree.type) {
-	case Type.Bind :
-	case Type.RVal :
-	case Type.If :
-	case Type.Empty :
+	final switch(tree.type) with(Type){
+	case Bind :
+	case RVal :
+	case If :
+	case Empty :
 		return  tree;
 
-	case Type.Range_Tails :
+	case Range_Tails :
 		assert (0);
-	case Type.As :
-	case Type.Range :
-	case Type.Pair :
-	case Type.Record :
-	case Type.Variant :
+	case As :
+	case Range :
+	case Pair :
+	case Record :
+	case Variant :
 		return immutable AST(tree.type,tree.data,tree.children.map!(a => analyze(a)).array);
-	case Type.Root :
+	case Root :
 		if (tree.children.length == 1)
-			return immutable AST(Type.Root,"",[tree.children[0].analyze,immutable AST(Type.If,"true",[])]);
+			return immutable AST(Root,"",[tree.children[0].analyze,immutable AST(Type.If,"true",[])]);
 		else
-			return immutable AST(Type.Root,"",[tree.children[0].analyze]);
-	case Type.Array :
+			return immutable AST(Root,"",[tree.children[0].analyze]);
+	case Array :
 		if (tree.children.length == 0) {
-			return immutable AST(Type.Empty,"",[],tree.pos);
+			return immutable AST(Empty,"",[],tree.pos);
 		}
 		else{
 			return tree.normalizeArrayPattern.addIndex.addSlice.addRequiredSize;
 		}
 
-	case Type.Array_Elem :
+	case Array_Elem :
 		if (tree.children.length == 0)
-			return immutable AST(Type.Empty,"",[]);
+			return immutable AST(Empty,"",[]);
 		else
-			return immutable AST(Type.Array_Elem,"",tree.children.map!(a => analyze(a)).array);
+			return immutable AST(Array_Elem,"",tree.children.map!(a => analyze(a)).array);
 	}
 }
 unittest {
