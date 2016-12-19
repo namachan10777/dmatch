@@ -14,13 +14,10 @@ template pmatch(alias sym,string src) {
 	enum pmatch = generateCode(src,sym.stringof);
 }
 unittest{
-	int x;
-	pragma(msg,pmatch!(x,"a => write(a);"));
 }
 
 string generateCode(string src,string arg) {
 	import std.algorithm.iteration;
-//:	import std.range;
 	
 	Expr[] exprs;
 	string next_pattern;
@@ -41,7 +38,7 @@ string generateCode(string src,string arg) {
 			.rmRVal]
 			.generate(arg,expr.code) ~ "\n";
 	}
-	return r;
+	return "import std.range:save,front,popFront;"~r;
 }
 unittest {
 }
