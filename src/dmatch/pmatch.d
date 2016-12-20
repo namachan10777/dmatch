@@ -30,15 +30,17 @@ string generateCode(string src,string arg) {
 		exprs ~= Expr(next_pattern,splited[0..$-1].join(";") ~ ";");
 		next_pattern = splited[$-1];
 	}
-	string r;
+	string pattern,pattern_test;
 	foreach(expr;exprs) {
-		r ~= [expr.pattern
+		auto ast =
+			expr.pattern
 			.parse
 			.analyze
-			.rmRVal]
-			.generate(arg,expr.code) ~ "\n";
+			.rmRVal;
+		pattern_test = [ast].generate(arg,"") ~ "\n";
+		pattern      = [ast].generate(arg,expr.code) ~ "\n";
 	}
-	return "import std.range:save,front,popFront;"~r;
+	return "import std.range:save,front,popFront;"~format("static if(__traits(compiles,(){%s})){%s}",pattern_test,pattern);
 }
 unittest {
 }
