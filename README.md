@@ -1,6 +1,8 @@
 # dmatch
 [![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=develop)](https://travis-ci.org/namachan10777/dmatch)
 
+*This repository under development...*
+
 [Japanese ver](./README.ja.md)
 ## Overview
 Pattern matching for D
@@ -13,10 +15,10 @@ Pattern matching for D
 ### sample code
 ```
 int add_all(int[] list){
-	return pmatch!(int[],
-			q{[] => return 0;},
-			q{[x] ~ xs => return x + add_all(xs);})
-			(list);
+	mixin(pmatch!(list,q{
+			[] => return 0;
+			[x] ~ xs => x + return add_all(xs);
+		}));
 }
 ```
 ### sample pattern
