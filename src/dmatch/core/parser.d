@@ -352,17 +352,43 @@ unittest {
 	assert(Src("foo (hoge!x, 0x12 ,hoge(foo))").func == Src("foo (hoge!x, 0x12 ,hoge(foo))","",true));
 }
 
+/+
+dmatch pattern parser
++/
+
+pure string patterns_srcgen(string[] not_inludes = []) {
+	import std.format;
+	import std.string;
+	auto candidates = ["as_p","array_p","range_p","variant_p","record_p","bracket_p","bind_p","rval_p"];
+	string[] buf;
+	foreach(candidate;candidates) {
+		auto ok = true;
+		foreach(not_inlude;not_inludes)	{
+			ok &= not_inlude != candidate;
+		}
+		if (ok) buf ~= candidate;
+	}
+	return format("alias patterns=or!(%s);",buf.join(','));
+}
+unittest {
+	assert (patterns_srcgen(["as_p","array_p"]) == "alias patterns=or!(range_p,variant_p,record_p,bracket_p,bind_p,rval_p);");
+}
+
+
+//right value parser
+//0x12 succ(12) "str" ...
 alias rval_p = term!(Type.RVal,or!(func,literal));
 unittest {
 	assert(Src("0x12").rval_p.trees == [immutable AST(Type.RVal,"0x12",[])]);
 }
+//bind parser
 alias bind_p = term!(Type.Bind,symbol);
 unittest {
 	assert(Src("__abc123").bind_p.trees == [immutable AST(Type.Bind,"__abc123",[])]);
 }
 
 //if (/+この部分+/)　を抜き出す
-immutable(Src) withdraw(immutable Src src) {
+immutable(Src) cond_withdraw(immutable Src src) {
 	size_t cnt;
 	bool found_begin;
 	size_t begin;
@@ -385,13 +411,13 @@ immutable(Src) withdraw(immutable Src src) {
 	}
 }
 unittest {
-	assert(Src("  ( ( a+b)* )c").withdraw == Src(" ( a+b)* ","c",true));
-	assert(Src("  ( ( a+b* c").withdraw == Src("","  ( ( a+b* c",false));
+	assert(Src("  ( ( a+b)* )c").cond_withdraw == Src(" ( a+b)* ","c",true));
+	assert(Src("  ( ( a+b* c").cond_withdraw == Src("","  ( ( a+b* c",false));
 }
 
 // if (x > 2)
 immutable(Src) guard_p (immutable Src src) {
-	auto parsed = src.term!(Type.If,seq!(omit!(str!"if"),omit!emp,withdraw));
+	auto parsed = src.term!(Type.If,seq!(omit!(str!"if"),omit!emp,cond_withdraw));
 	if (parsed.succ) return parsed;
 	else return src.failed;
 }
@@ -402,8 +428,10 @@ unittest {
 
 //a @ b @ c
 immutable(Src) as_p(immutable Src src) {
-	alias pattern = or!(array_p,bracket_p,record_p,variant_p,rval_p,bind_p);
-	return src.node!(Type.As,seq!(pattern,many!(seq!(omit!(seq!(emp,same!'@',emp)),pattern))));
+	//as_p : 直接左再起防止
+	//range_p : 間接左再起防止
+	mixin(patterns_srcgen(["as_p","range_p"]));
+	return src.node!(Type.As,seq!(patterns,many!(seq!(omit!(seq!(emp,same!'@',emp)),patterns))));
 }
 unittest {
 	assert(Src("a @ b").as_p.trees == [immutable AST(Type.As,"",[immutable AST(Type.Bind,"a",[]),immutable AST(Type.Bind,"b",[])])]);
@@ -412,8 +440,9 @@ unittest {
 
 // [a,b,c]
 immutable(Src) array_elem_p(immutable Src src) {
-	alias pattern = or!(as_p,array_p,bracket_p,record_p,rval_p,bind_p,);
-	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(pattern,rep!(seq!(omit!emp,omit!(same!','),pattern)),omit!emp)),omit!(same!']')));
+	//array_elem_pはpatternsに含まれていないので左再起は無い
+	mixin(patterns_srcgen);
+	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(patterns,rep!(seq!(omit!emp,omit!(same!','),patterns)),omit!emp)),omit!(same!']')));
 }
 unittest {
 	assert(Src("[a,b]").array_elem_p.trees ==
@@ -425,7 +454,10 @@ unittest {
 
 //[a,b,c] ~ d
 immutable(Src) array_p(immutable Src src) {
-	alias pattern = or!(array_elem_p,rval_p,bind_p);
+	//含まれるのは以下の物のみ
+	//[a,b,c] : array_elem_p
+	//d bind_p
+	alias pattern = or!(array_elem_p,bind_p);
 	return src.node!(Type.Array,or!(
 		seq!(pattern,omit!emp,many!(seq!(omit!emp,omit!(same!'~'),omit!emp,pattern))),
 		array_elem_p));
@@ -440,8 +472,10 @@ unittest {
 
 //a::b::c
 immutable(Src) range_p(immutable Src src) {
-	alias pattern = or!(as_p,bracket_p,array_p,variant_p,rval_p,bind_p);
-	return src.node!(Type.Range,seq!(pattern,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,pattern))));
+	//range_p : 直接左再起防止
+	//as_pはrange_pより優先度が高いためrange_pにas_pは含まれる
+	mixin(patterns_srcgen(["range_p"]));
+	return src.node!(Type.Range,seq!(patterns,many!(seq!(omit!emp,omit!(str!"::"),omit!emp,patterns))));
 }
 unittest {
 	assert(Src("x::xs").range_p.trees == [immutable AST(Type.Range,"",[immutable AST(Type.Bind,"x",[]),immutable AST(Type.Bind,"xs",[])])]);
@@ -450,8 +484,8 @@ unittest {
 
 //a : c
 immutable(Src) variant_p(immutable Src src) {
-	alias pattern = or!(bracket_p,array_p,rval_p,bind_p);
-	return src.node!(Type.Variant,seq!(pattern,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
+	mixin(patterns_srcgen(["as_p","range_p","variant_p"]));
+	return src.node!(Type.Variant,seq!(patterns,omit!emp,omit!(same!':'),omit!emp,push!(or!(template_,symbol))));
 }
 unittest {
 	assert (Src("x:A").variant_p.trees == [immutable AST(Type.Variant,"A",[immutable AST(Type.Bind,"x",[])])]);
@@ -460,8 +494,8 @@ unittest {
 
 //{a = b,c = d}
 immutable(Src) record_p(immutable Src src) {
-	alias pattern = or!(as_p,bracket_p,array_p,range_p,record_p,variant_p,rval_p,bind_p);
-	alias pair_p = node!(Type.Pair,seq!(pattern,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
+	mixin(patterns_srcgen);
+	alias pair_p = node!(Type.Pair,seq!(patterns,omit!emp,omit!(same!'='),omit!emp,push!(or!(template_,symbol))));
 	return src.node!(Type.Record,seq!(omit!(same!'{'),omit!emp,pair_p,rep!(seq!(omit!emp,omit!(same!','),omit!emp,pair_p,omit!emp)),omit!emp,omit!(same!'}')));
 }
 unittest {
@@ -473,8 +507,8 @@ unittest {
 
 //(a::b) @ c :: d
 immutable(Src) bracket_p(immutable Src src) {
-	alias pattern = or!(as_p,range_p,variant_p);
-	return src.seq!(omit!(same!'('),omit!emp,pattern,omit!emp,omit!(same!')'));
+	mixin(patterns_srcgen);
+	return src.seq!(omit!(same!'('),omit!emp,patterns,omit!emp,omit!(same!')'));
 }
 unittest {
 	assert (Src("(x::xs)").bracket_p == Src("x::xs").range_p);
