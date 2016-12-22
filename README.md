@@ -13,6 +13,7 @@ Pattern matching for D
 
 ## Example
 ### sample code
+this code doesn't work now.
 ```
 int add_all(int[] list){
 	mixin(pmatch!(list,q{
