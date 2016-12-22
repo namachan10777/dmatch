@@ -518,12 +518,12 @@ unittest {
 }
 
 immutable(AST) parse(immutable string src) {
-	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(range_p,as_p,variant_p,record_p,bracket_p,array_p,bind_p,rval_p,empty_p),omit!emp),omit!emp,opt!guard_p));
+	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(range_p,as_p,variant_p,record_p,bracket_p,array_p,bind_p,rval_p,empty_p),omit!emp),omit!emp,opt!guard_p,omit!emp));
 	if (!parsed.succ || !parsed.dish.empty) throw new Exception("Syntax Error");
 	return parsed.trees[0];
 }
 unittest {
-	assert ("x@y::xs if(x > 2)".parse ==
+	assert ("x@y::xs if (x > 2) ".parse ==
 		immutable AST(Type.Root,"",[
 			immutable AST(Type.Range,"",[
 				immutable AST(Type.As,"",[
