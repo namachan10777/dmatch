@@ -359,7 +359,7 @@ dmatch pattern parser
 pure string patterns_srcgen(string[] not_inludes = []) {
 	import std.format;
 	import std.string;
-	auto candidates = ["as_p","array_p","range_p","variant_p","record_p","bracket_p","bind_p","rval_p"];
+	auto candidates = ["as_p","array_p","range_p","variant_p","record_p","bracket_p","bind_p","rval_p","empty_p"];
 	string[] buf;
 	foreach(candidate;candidates) {
 		auto ok = true;
@@ -371,12 +371,16 @@ pure string patterns_srcgen(string[] not_inludes = []) {
 	return format("alias patterns=or!(%s);",buf.join(','));
 }
 unittest {
-	assert (patterns_srcgen(["as_p","array_p"]) == "alias patterns=or!(range_p,variant_p,record_p,bracket_p,bind_p,rval_p);");
+	assert (patterns_srcgen(["as_p","array_p"]) == "alias patterns=or!(range_p,variant_p,record_p,bracket_p,bind_p,rval_p,empty_p);");
 }
 
 
 //right value parser
 //0x12 succ(12) "str" ...
+alias empty_p = term!(Type.Empty,omit!(seq!(same!'[',emp,same!']')));
+unittest {
+	assert(Src("[]").empty_p.trees == [immutable AST(Type.Empty,"",[])]);
+}
 alias rval_p = term!(Type.RVal,or!(func,literal));
 unittest {
 	assert(Src("0x12").rval_p.trees == [immutable AST(Type.RVal,"0x12",[])]);
@@ -442,14 +446,12 @@ unittest {
 immutable(Src) array_elem_p(immutable Src src) {
 	//array_elem_pはpatternsに含まれていないので左再起は無い
 	mixin(patterns_srcgen);
-	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,opt!(seq!(patterns,rep!(seq!(omit!emp,omit!(same!','),patterns)),omit!emp)),omit!(same!']')));
+	return src.node!(Type.Array_Elem,seq!(omit!(same!'['),omit!emp,seq!(patterns,rep!(seq!(omit!emp,omit!(same!','),patterns)),omit!emp),omit!(same!']')));
 }
 unittest {
 	assert(Src("[a,b]").array_elem_p.trees ==
 		[immutable AST(Type.Array_Elem,"",[immutable AST(Type.Bind,"a",[]),immutable AST(Type.Bind,"b",[])])]);
-	assert(Src("[]").array_elem_p.trees ==
-		[immutable AST(Type.Array_Elem,"",[])]);
-	assert(Src("[,]").array_elem_p == Src("","[,]",false));
+	assert(Src("[]").array_elem_p == Src("","[]",false));
 }
 
 //[a,b,c] ~ d
@@ -457,7 +459,7 @@ immutable(Src) array_p(immutable Src src) {
 	//含まれるのは以下の物のみ
 	//[a,b,c] : array_elem_p
 	//d bind_p
-	alias pattern = or!(array_elem_p,bind_p);
+	alias pattern = or!(array_elem_p,bind_p,empty_p);
 	return src.node!(Type.Array,or!(
 		seq!(pattern,omit!emp,many!(seq!(omit!emp,omit!(same!'~'),omit!emp,pattern))),
 		array_elem_p));
@@ -466,7 +468,7 @@ unittest {
 	assert(Src("[a]~[]").array_p.trees == [
 		immutable AST(Type.Array,"",[
 			immutable AST(Type.Array_Elem,"",[immutable AST(Type.Bind,"a",[])]),
-			immutable AST(Type.Array_Elem,"",[])])]);
+			immutable AST(Type.Empty,"",[])])]);
 	assert(Src("~[a]").array_p == Src("","~[a]",false));
 }
 
@@ -516,7 +518,7 @@ unittest {
 }
 
 immutable(AST) parse(immutable string src) {
-	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(range_p,as_p,variant_p,record_p,bracket_p,array_p,bind_p),omit!emp),omit!emp,opt!guard_p));
+	auto parsed = Src(src).node!(Type.Root,seq!(omit!emp,seq!(or!(range_p,as_p,variant_p,record_p,bracket_p,array_p,bind_p,rval_p,empty_p),omit!emp),omit!emp,opt!guard_p));
 	if (!parsed.succ || !parsed.dish.empty) throw new Exception("Syntax Error");
 	return parsed.trees[0];
 }
