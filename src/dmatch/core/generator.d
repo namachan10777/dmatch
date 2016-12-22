@@ -33,7 +33,7 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 			immutable string[] base;
 			immutable condtions = result.map!(a => a[1]).fold!"a~b"(base);
 			immutable children = result.map!(a => a[0]).array;
-			return typeof(return)(immutable AST(tree.type,tree.data,children,tree.pos),condtions);
+			return typeof(return)(immutable AST(tree.type,tree.data,children,tree.pos,tree.range,tree.require_size),condtions);
 		case RVal:
 			uint hash_1;
 			foreach(c;__DATE__ ~ __TIME__ ~ __FILE__ ~ tree.data ~ (&tree).to!string) {
