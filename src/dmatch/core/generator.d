@@ -86,8 +86,10 @@ immutable(AST) shaveChildren(immutable AST ast) {
 immutable(string) generate(immutable AST tree,immutable string parent,immutable string addtion) {
 	final switch(tree.type) with (Type) {
 	case Root:
-		return generate(tree.children[0],parent,
-			format("if(%s){%s}",tree.children[1].data,addtion)); //add guard to tail.
+		return 
+			format("import std.range : empty,front,popFront;{%s}",
+			generate(tree.children[0],parent,
+			format("if(%s){%s}",tree.children[1].data,addtion))); //add guard to tail.
 	case Bind :
 		return format("auto %s=%s;%s",tree.data,parent,addtion);
 	case Empty :
@@ -129,15 +131,15 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 }
 unittest {
 	assert("[a,b]~c".parse.analyze.generate("arg","exec();")
-		== "if(arg.length>=2){auto a=arg[0];auto b=arg[1];auto c=arg[2..$-0];if(true){exec();}}");
+		== "{if(arg.length>=2){auto a=arg[0];auto b=arg[1];auto c=arg[2..$-0];if(true){exec();}}}");
 	assert("a:int".parse.analyze.generate("arg","exec();")
-		== "if(arg.type==typeid(int)){auto a=arg.get!(int);if(true){exec();}}");
+		== "{if(arg.type==typeid(int)){auto a=arg.get!(int);if(true){exec();}}}");
 	assert("a::b::c".parse.analyze.generate("arg","exec();")
-		== "auto __arg_saved__=arg.save;if(!__arg_saved__.empty){auto a=__arg_saved__.front;__arg_saved__.popFront;if(!__arg_saved__.empty){auto b=__arg_saved__.front;__arg_saved__.popFront;auto c=__arg_saved__;if(true){exec();}}}");
+		== "{auto __arg_saved__=arg.save;if(!__arg_saved__.empty){auto a=__arg_saved__.front;__arg_saved__.popFront;if(!__arg_saved__.empty){auto b=__arg_saved__.front;__arg_saved__.popFront;auto c=__arg_saved__;if(true){exec();}}}}");
 	assert("{a=alpha,b=beta}".parse.analyze.generate("arg","exec();")
-		== "auto a=arg.alpha;auto b=arg.beta;if(true){exec();}");
+		== "{auto a=arg.alpha;auto b=arg.beta;if(true){exec();}}");
 	assert("a::[]".parse.analyze.generate("arg","exec();") ==
-		"auto __arg_saved__=arg.save;if(!__arg_saved__.empty){auto a=__arg_saved__.front;__arg_saved__.popFront;if(__arg_saved__.empty){if(true){exec();}}}");
+		"{auto __arg_saved__=arg.save;if(!__arg_saved__.empty){auto a=__arg_saved__.front;__arg_saved__.popFront;if(__arg_saved__.empty){if(true){exec();}}}}");
 }
 
 
