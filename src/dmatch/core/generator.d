@@ -49,8 +49,6 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 			gen.seed(hash_2);
 			immutable name_2 = uniform(0,uint.max,gen).to!string;
 			return typeof(return)(immutable AST(Bind,name_1~name_2,[],tree.pos),[format("%s == %s",name_1~name_2,tree.data)]);
-		case Range_Tails :
-			assert(0);
 	}
 }
 
@@ -124,7 +122,6 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 	case Variant :
 		auto getter = format("%s.get!(%s)",parent,tree.data);
 		return format("if(%s.type==typeid(%s)){%s}",parent,tree.data,generate(tree.children[0],getter,addtion));
-	case Range_Tails :
 	case If :
 	case RVal :
 		assert (0);//elimitated pattern.

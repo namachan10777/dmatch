@@ -25,8 +25,6 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 	case Empty :
 		return  tree;
 
-	case Range_Tails :
-		assert (0);
 	case As :
 	case Range :
 	case Pair :

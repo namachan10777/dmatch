@@ -16,7 +16,6 @@ enum Type {
 	Array,
 	Array_Elem,
 	Range,
-	Range_Tails,
 	Record,
 	Pair,
 	Variant,
