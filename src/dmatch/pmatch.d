@@ -37,8 +37,8 @@ string generateCode(string src,string arg) {
 			.parse
 			.analyze
 			.rmRVal;
-		pattern_test = [ast].generate(arg,"") ~ "\n";
-		pattern      = [ast].generate(arg,expr.code) ~ "\n";
+		pattern_test = ast.generate(arg,"") ~ "\n";
+		pattern      = ast.generate(arg,expr.code) ~ "\n";
 	}
 	return "import std.range:save,front,popFront;"~format("static if(__traits(compiles,(){%s})){%s}",pattern_test,pattern);
 }
