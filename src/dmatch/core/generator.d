@@ -85,6 +85,76 @@ immutable(AST) shaveChildren(immutable AST ast) {
 	return immutable AST(ast.type,ast.data,ast.children[1..$],ast.pos);
 }
 
+immutable(string) generate(immutable AST tree,immutable string parent,immutable string addtion) {
+	final switch(tree.type) with (Type) {
+	case Root:
+		return generate(tree.children[0],parent,
+			format("if(%s){%s}",tree.children[1].data,addtion)); //add guard to tail.
+	case Bind :
+		return format("auto %s=%s;%s",tree.data,parent,addtion);
+	case Empty :
+		return format("if(%s.empty){%s}",parent,addtion);
+	case As :
+		return tree.children.fold_generator!((t,a) => generate(t,parent,a))(addtion);
+	case Range :
+		auto saved_name = format("__%s_saved__",parent);
+		return
+			format("auto %s=%s.save;",saved_name,parent) ~
+			tree.children[0..$-1].fold_generator!(
+				(t,a) => format("if(!%s.empty){%s%s.popFront;%s}",saved_name,generate(t,saved_name~".front",""),saved_name,a)
+			)(
+				generate(tree.children[$-1],saved_name,addtion)
+			);
+	case Array :
+		return tree.children.fold_generator!(
+			(t,a) =>	t.range.enabled   ? generate(t,format("%s[%s]",parent,t.range.toString),a) :
+						t.pos.enabled ? generate(t,format("%s[%s]",parent,t.pos.toString),  a) :
+						                  generate(t,                                parent,  a)
+		)(addtion);
+	case Array_Elem :
+		return tree.children.fold_generator!(
+			(t,a) => generate(t,format("%s[%s]",parent,t.pos.toString),a)
+		)(addtion);
+	case Record :
+		return tree.children.fold_generator!(
+			(t,a) => generate(t,parent,a)
+		)(addtion);
+	case Pair :
+		return generate(tree.children[0],format("%s.%s",parent,tree.data),addtion);
+	case Variant :
+		auto getter = format("%s.get!(%s)",parent,tree.data);
+		return format("if(%s.type==typeid(%s)){%s}",parent,tree.data,generate(tree.children[0],getter,addtion));
+	case Range_Tails :
+	case If :
+	case RVal :
+		assert (0);//elimitated pattern.
+	}
+}
+unittest {
+	assert("[a,b]~c".parse.analyze.generate("arg","exec();")
+		== "auto a=arg[0];auto b=arg[1];auto c=arg[2..$-0];if(true){exec();}");
+	assert("a:int".parse.analyze.generate("arg","exec();")
+		== "if(arg.type==typeid(int)){auto a=arg.get!(int);if(true){exec();}}");
+	assert("a::b::c".parse.analyze.generate("arg","exec();")
+		== "auto __arg_saved__=arg.save;if(!__arg_saved__.empty){auto a=__arg_saved__.front;__arg_saved__.popFront;if(!__arg_saved__.empty){auto b=__arg_saved__.front;__arg_saved__.popFront;auto c=__arg_saved__;if(true){exec();}}}");
+	assert("{a=alpha,b=beta}".parse.analyze.generate("arg","exec();")
+		== "auto a=arg.alpha;auto b=arg.beta;if(true){exec();}");
+	assert("a::[]".parse.analyze.generate("arg","exec();") ==
+		"auto __arg_saved__=arg.save;if(!__arg_saved__.empty){auto a=__arg_saved__.front;__arg_saved__.popFront;if(__arg_saved__.empty){if(true){exec();}}}");
+}
+
+
+immutable(string) fold_generator(alias f)(immutable AST[] forest,immutable string addtion) {
+	if (forest.length == 0) return addtion;
+	return f(forest[0],fold_generator!f(forest[1..$],addtion));
+}
+unittest {
+	assert (
+		[immutable AST(Type.Bind,"a",[]),immutable AST(Type.Bind,"b",[]),immutable AST(Type.Bind,"c",[])]
+		.fold_generator!((t,a) => format("if(%s){%s}",t.data,a))("x")
+		== "if(a){if(b){if(c){x}}}");
+}
+
 immutable(string) generate(immutable AST[] forest,immutable string parent,immutable string addtion) {
 	import std.format;
 	if (forest.length == 0) return addtion;
