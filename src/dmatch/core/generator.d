@@ -104,11 +104,11 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 				generate(tree.children[$-1],saved_name,addtion)
 			);
 	case Array :
-		return tree.children.fold_generator!(
+		return format("if(%s.length>=%d){%s}",parent,tree.require_size,tree.children.fold_generator!(
 			(t,a) =>	t.range.enabled   ? generate(t,format("%s[%s]",parent,t.range.toString),a) :
 						t.pos.enabled ? generate(t,format("%s[%s]",parent,t.pos.toString),  a) :
 						                  generate(t,                                parent,  a)
-		)(addtion);
+		)(addtion));
 	case Array_Elem :
 		return tree.children.fold_generator!(
 			(t,a) => generate(t,format("%s[%s]",parent,t.pos.toString),a)
@@ -129,7 +129,7 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 }
 unittest {
 	assert("[a,b]~c".parse.analyze.generate("arg","exec();")
-		== "auto a=arg[0];auto b=arg[1];auto c=arg[2..$-0];if(true){exec();}");
+		== "if(arg.length>=2){auto a=arg[0];auto b=arg[1];auto c=arg[2..$-0];if(true){exec();}}");
 	assert("a:int".parse.analyze.generate("arg","exec();")
 		== "if(arg.type==typeid(int)){auto a=arg.get!(int);if(true){exec();}}");
 	assert("a::b::c".parse.analyze.generate("arg","exec();")
