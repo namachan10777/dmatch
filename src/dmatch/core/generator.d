@@ -48,7 +48,7 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
 			immutable name_1 = uniform(0,uint.max,gen).to!string;
 			gen.seed(hash_2);
 			immutable name_2 = uniform(0,uint.max,gen).to!string;
-			return typeof(return)(immutable AST(Bind,name_1~name_2,[],tree.pos),[format("%s == %s",name_1~name_2,tree.data)]);
+			return typeof(return)(immutable AST(Bind,"__tmp__"~name_1~name_2,[],tree.pos),[format("%s == %s",name_1~name_2,tree.data)]);
 	}
 }
 
