@@ -14,6 +14,14 @@ template pmatch(alias sym,string src) {
 	enum pmatch = generateCode(src,sym.stringof);
 }
 unittest{
+	auto ary = [1,2,3];
+	int y1;
+	int y2;
+	int[] ys;
+	mixin(pmatch!(ary,q{
+		x1::x2::xs => y1 = x1;y2 = x2;ys = xs;
+	}));
+	assert (y1 == 1 && y2 == 2 && ys == [3]);
 }
 
 string generateCode(string src,string arg) {
