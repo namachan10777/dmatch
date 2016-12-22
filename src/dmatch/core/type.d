@@ -34,6 +34,9 @@ struct Range {
 	bool opEquals(Range range) inout {
 		return begin == range.begin && end == range.end;
 	}
+	bool enabled() inout {
+		return begin.enabled;	
+	}
 }
 
 struct Index {

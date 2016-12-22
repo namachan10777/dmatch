@@ -252,7 +252,7 @@ string tree2str(inout AST ast,string indent = "  ") {
 	if (ast.pos.enabled)
 		return format("%s : \"%s\" (pos = \"%s\") %s\n",ast.type,ast.data,ast.pos,require_size)
 			~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
-	else if (ast.range.begin.enabled)
+	else if (ast.range.enabled)
 		return format("%s : \"%s\" (range = \"%s\") %s\n",ast.type,ast.data,ast.range,require_size)
 			~ ast.children.map!(a => indent ~ a.tree2str(indent ~ "  ")).fold!"a~b"("");
 	else
