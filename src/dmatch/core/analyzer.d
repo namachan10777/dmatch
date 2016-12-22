@@ -35,7 +35,7 @@ immutable(AST) analyze(immutable AST tree,Index pos = Index.disabled) {
 		if (tree.children.length == 1)
 			return immutable AST(Root,"",[tree.children[0].analyze,immutable AST(Type.If,"true",[])]);
 		else
-			return immutable AST(Root,"",[tree.children[0].analyze]);
+			return immutable AST(Root,"",[tree.children[0].analyze,tree.children[1]]);
 	case Array :
 		if (tree.children.length == 0) {
 			return immutable AST(Empty,"",[],tree.pos);
