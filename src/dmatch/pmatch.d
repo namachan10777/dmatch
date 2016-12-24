@@ -11,20 +11,34 @@ alias Tp = Tuple;
 alias Expr = Tp!(string,"pattern",string,"code");
 
 template pmatch(alias sym,string src) {
-	enum pmatch = generateCode(src,sym.stringof);
+	enum pmatch = generateCode(src,sym.stringof,false);
 }
 unittest{
-	auto ary = [1,2,3];
-	int y1;
-	int y2;
-	int[] ys;
-	mixin(pmatch!(ary,q{
-		x1::x2::xs => y1 = x1;y2 = x2;ys = xs;
-	}));
-	assert (y1 == 1 && y2 == 2 && ys == [3]);
+	assert ((){
+		auto ary = [1,2,3];
+		int y1;
+		int y2;
+		int[] ys;
+		mixin(pmatch!(ary,q{
+			x1::x2::xs => y1 = x1;y2 = x2;ys = xs;
+		}));
+		return y1 == 1 && y2 == 2 && ys == [3] && ary == [1,2,3];
+	}());
+	
+	assert ((){
+		import std.stdio;
+		auto ary = [1,2,3];
+		int y1;
+		int y2;
+		int[] ys;
+		mixin(pmatch!(ary,q{
+			[x1,x2] ~ xs => y1 = x1;y2 = x2;ys = xs;
+		}));
+		return y1 == 1 && y2 == 2 && ys == [3] && ary == [1,2,3];
+	}());
 }
 
-string generateCode(string src,string arg) {
+string generateCode(string src,string arg,bool enableStaticBranch = true) {
 	import std.algorithm.iteration;
 	
 	Expr[] exprs;
@@ -38,17 +52,24 @@ string generateCode(string src,string arg) {
 		exprs ~= Expr(next_pattern,splited[0..$-1].join(";") ~ ";");
 		next_pattern = splited[$-1];
 	}
-	string pattern,pattern_test;
+	string code;
 	foreach(expr;exprs) {
+		import std.stdio;
 		auto ast =
 			expr.pattern
 			.parse
 			.analyze
 			.rmRVal;
-		pattern_test = ast.generate(arg,"") ~ "\n";
-		pattern      = ast.generate(arg,expr.code) ~ "\n";
+		auto pattern = format("{bool succes;%s%s}",ast.generate(arg,"succes=true;"~expr.code),"if(succes){goto __pmatch__end__;}");
+		if (enableStaticBranch) {
+			auto pattern_test = ast.generate(arg,"") ~ "\n";
+			code ~= format("static if(__traits(compiles,(){%s})){%s}\n",pattern_test,pattern);
+		}
+		else {
+			code ~= pattern ~ '\n';
+		}
 	}
-	return "import std.range:save,front,popFront;"~format("static if(__traits(compiles,(){%s})){%s}",pattern_test,pattern);
+	return "{import std.range:empty,save,front,popFront;" ~ code ~ "__pmatch__end__:}";
 }
 unittest {
 }

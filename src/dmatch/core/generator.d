@@ -87,7 +87,7 @@ immutable(string) generate(immutable AST tree,immutable string parent,immutable 
 	final switch(tree.type) with (Type) {
 	case Root:
 		return 
-			format("import std.range : empty,front,popFront;{%s}",
+			format("{%s}",
 			generate(tree.children[0],parent,
 			format("if(%s){%s}",tree.children[1].data,addtion))); //add guard to tail.
 	case Bind :
