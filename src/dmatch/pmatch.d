@@ -25,6 +25,15 @@ unittest{
 		}));
 		return y1 == 1 && y2 == 2 && ys == [3] && ary == [1,2,3];
 	}());
+
+	assert ((){
+		auto ary = [1,2];
+		int y1,y2;
+		mixin(pmatch!(ary,q{
+			x1::x2::[] => y1 = x1;y2 = x2;
+		}));
+		return y1 == 1 && y2 == 2;
+	}());
 	
 	assert ((){
 		auto ary = [1,2,3];
@@ -35,6 +44,44 @@ unittest{
 			[x1,x2] ~ xs => y1 = x1;y2 = x2;ys = xs;
 		}));
 		return y1 == 1 && y2 == 2 && ys == [3] && ary == [1,2,3];
+	}());
+
+	assert ((){
+		import std.variant : Variant;
+		Variant v;
+		v = 123;
+		int x;
+		mixin(pmatch!(v,q{
+			i:int => x = i;
+		}));
+		return x == 123;
+	}());
+
+	assert ((){
+		struct St {
+			int xi;
+			real xr;
+		}
+		St st = { 123, 3.14 };
+		int yi;
+		real yr;
+		mixin(pmatch!(st,q{
+			{i = xi,r = xr} => yi = i;yr = r;
+		}));
+		return yi == 123 && yr == 3.14;
+	}());
+
+	assert ((){
+		import std.typecons : Tuple;
+		Tuple!(int,real) tp;
+		tp[0] = 123;
+		tp[1] = 3.14;
+		int yi;
+		real yr;
+		mixin(pmatch!(tp,q{
+			[i,r] => yi = i;yr = r;
+		}));
+		return yi == 123 && yr == 3.14;
 	}());
 }
 
