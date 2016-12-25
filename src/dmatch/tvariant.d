@@ -4,8 +4,6 @@ import std.meta : AliasSeq;
 import std.traits;
 import std.format : format;
 
-import std.stdio;
-
 public import std.variant : This;
 
 public:

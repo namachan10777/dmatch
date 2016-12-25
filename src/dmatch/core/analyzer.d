@@ -1,15 +1,11 @@
 module dmatch.core.analyzer;
 
-import std.algorithm.iteration;
-import std.algorithm.searching;
-import std.algorithm.mutation;
-import std.range;
-import std.format;
-import std.stdio;
-import std.conv;
+import std.algorithm.iteration : map, sum;
+import std.algorithm.searching : count;
+import std.range : iota, zip, array, retro;
 
-import dmatch.core.parser : AST,Type,tree2str,Index;
-import dmatch.core.type;
+import dmatch.core.type : Type, AST, Index, Range;
+import dmatch.core.parser : parse, tree2str;
 
 static class ValidPatternException : Exception {
 	this(string msg,string file = __FILE__,int line = __LINE__) {

@@ -1,11 +1,12 @@
 module dmatch.pmatch;
 
-import std.string;
-import std.typecons;
+import std.string : split, join;
+import std.format : format;
+import std.typecons : Tuple;
 
-import dmatch.core.parser;
-import dmatch.core.analyzer;
-import dmatch.core.generator;
+import dmatch.core.parser : parse;
+import dmatch.core.analyzer : analyze;
+import dmatch.core.generator : generate, rmRVal;
 
 alias Tp = Tuple;
 alias Expr = Tp!(string,"pattern",string,"code");
@@ -26,7 +27,6 @@ unittest{
 	}());
 	
 	assert ((){
-		import std.stdio;
 		auto ary = [1,2,3];
 		int y1;
 		int y2;

@@ -1,18 +1,17 @@
 module dmatch.core.generator;
 
-import std.stdio;
-import std.algorithm.iteration;
-import std.range;
-import std.random;
-import std.conv;
-import std.format;
-import std.typecons;
-import std.compiler;
+import std.algorithm.iteration : map;
+import std.string : join;
+import std.random : Mt19937, uniform;
+import std.conv : to;
+import std.format : format;
+import std.typecons : Tuple;
+import std.range : array;
 
-import dmatch.core.parser;
-import dmatch.core.analyzer;
-import dmatch.core.type;
-import dmatch.core.util;
+import dmatch.core.parser : parse, tree2str;
+import dmatch.core.analyzer : analyze;
+import dmatch.core.type : Type, AST, Index, Range;
+import dmatch.core.util : fold;
 
 alias Tp = Tuple;
 
