@@ -15,39 +15,40 @@ import dmatch.core.util : fold;
 
 alias Tp = Tuple;
 
-Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree) {
+Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree,size_t seed_count = 0,size_t seed_base = 1) {
 	final switch(tree.type) with(Type) {
 		case Root:
-		case If:
 		case As:
-		case Bind:
 		case Array:
 		case Array_Elem :
 		case Record :
 		case Pair:
-		case Empty:
 		case Variant:
 		case Range:
-			auto result = tree.children.map!(a => nameAssign(a));
+			Tp!(immutable(AST),immutable(string[]))[] fold_nameAssign(immutable AST[] forest, size_t seed_count = seed_count * seed_base) {
+				if (forest.length == 0) return [];
+				return nameAssign(forest[0],seed_count,seed_base * 10) ~ fold_nameAssign(forest[1..$],seed_count+1);
+			}
+			auto result = tree.children.map!(a => nameAssign(a,seed_count + 1));
 			immutable string[] base;
 			immutable condtions = result.map!(a => a[1]).fold!"a~b"(base);
 			immutable children = result.map!(a => a[0]).array;
 			return typeof(return)(immutable AST(tree.type,tree.data,children,tree.pos,tree.range,tree.require_size),condtions);
 		case RVal:
 			uint hash_1;
-			foreach(c;__DATE__ ~ __TIME__ ~ __FILE__ ~ tree.data ~ (&tree).to!string) {
+			foreach(c;__DATE__ ~ __TIME__ ~ __FILE__ ~ tree.data) {
 				hash_1 = hash_1 * 9 + c;
 			}
 			uint hash_2;
-			foreach(c;__DATE__ ~ __TIME__ ~ (&tree).to!string ~ tree.data ~ __FILE__) {
+			foreach(c;__DATE__ ~ __TIME__ ~ tree.data ~ __FILE__) {
 				hash_2 = hash_2 * 7 + c;
 			}
-			Mt19937 gen;
-			gen.seed(hash_1);
-			immutable name_1 = uniform(0,uint.max,gen).to!string;
-			gen.seed(hash_2);
-			immutable name_2 = uniform(0,uint.max,gen).to!string;
-			return typeof(return)(immutable AST(Bind,"__tmp__"~name_1~name_2,[],tree.pos),[format("%s == %s",name_1~name_2,tree.data)]);
+			auto name = "__tmp__"~hash_1.to!string~hash_2.to!string;
+			return typeof(return)(immutable AST(Type.Bind,name,[]),[format("%s==%s",name,tree.data)]);
+		case Empty:
+		case If:
+		case Bind:
+			return typeof(return)(tree,[]);
 	}
 }
 

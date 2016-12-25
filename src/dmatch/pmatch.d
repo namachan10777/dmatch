@@ -83,6 +83,17 @@ unittest{
 		}));
 		return yi == 123 && yr == 3.14;
 	}());
+
+	assert ((){
+		size_t match_num = 332;
+		int n = 20;
+		mixin(pmatch!(n,q{
+			10 => match_num = 1;
+			20 => match_num = 2;
+			30 => match_num = 3;
+		}));
+		return match_num == 2;
+	}());
 }
 
 string generateCode(string src,string arg,bool enableStaticBranch = true) {
