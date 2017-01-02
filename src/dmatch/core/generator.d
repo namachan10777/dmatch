@@ -31,7 +31,7 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree,size_t see
 			}
 			auto result = tree.children.map!(a => nameAssign(a,seed_count + 1));
 			immutable string[] base;
-			immutable condtions = result.map!(a => a[1]).fold!"a~b"(base);
+			immutable condtions = result.map!(a => a[1]).fold!((a,b) => a ~ b)(base);
 			immutable children = result.map!(a => a[0]).array;
 			return typeof(return)(immutable AST(tree.type,tree.data,children,tree.pos,tree.range,tree.require_size),condtions);
 		case RVal:
