@@ -7,3 +7,4 @@ __test__library__
 libdmatch.a
 .atom-build.yml
 dub.selections.json
+dmatch-test-library
