@@ -162,6 +162,10 @@ public:
 		}
 		mixin(Compare!Specs);
 	}
+
+	bool opEquals(TVariant!Specs* x) {
+		return opEquals(*x);
+	}
 }
 
 unittest {
