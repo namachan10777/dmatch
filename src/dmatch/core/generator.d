@@ -1,6 +1,6 @@
 module dmatch.core.generator;
 
-import std.algorithm.iteration : map;
+import std.algorithm.iteration : map, fold;
 import std.string : join;
 import std.random : Mt19937, uniform;
 import std.conv : to;
@@ -11,10 +11,10 @@ import std.range : array;
 import dmatch.core.parser : parse, tree2str;
 import dmatch.core.analyzer : analyze;
 import dmatch.core.type : Type, AST, Index, Range;
-import dmatch.core.util : fold;
 
 alias Tp = Tuple;
 
+//一時変数への名前割り付け
 Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree,size_t seed_count = 0,size_t seed_base = 1) {
 	final switch(tree.type) with(Type) {
 		case Root:
@@ -27,7 +27,7 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree,size_t see
 		case Range:
 			Tp!(immutable(AST),immutable(string[]))[] fold_nameAssign(immutable AST[] forest, size_t seed_count = seed_count * seed_base) {
 				if (forest.length == 0) return [];
-				return nameAssign(forest[0],seed_count,seed_base * 10) ~ fold_nameAssign(forest[1..$],seed_count+1);
+				return [nameAssign(forest[0],seed_count,seed_base * 10)] ~ fold_nameAssign(forest[1..$],seed_count+1);
 			}
 			auto result = tree.children.map!(a => nameAssign(a,seed_count + 1));
 			immutable string[] base;
@@ -44,6 +44,7 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree,size_t see
 				hash_2 = hash_2 * 7 + c;
 			}
 			auto name = "__tmp__"~hash_1.to!string~hash_2.to!string;
+			//右辺値を左辺値に変換
 			return typeof(return)(immutable AST(Type.Bind,name,[]),[format("%s==%s",name,tree.data)]);
 		case Empty:
 		case If:
@@ -53,6 +54,8 @@ Tp!(immutable(AST),immutable(string[])) nameAssign(immutable AST tree,size_t see
 }
 
 //analyzeを通ってるはず
+//Ifの子要素の各条件式を連結して一つの条件式にする
+//要はifの各条件を&&で繋ぐだけ
 immutable(AST) linkGuard(immutable AST tree,immutable string[] condtions)
 in{
 	assert (tree.type == Type.Root);

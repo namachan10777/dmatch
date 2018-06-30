@@ -105,7 +105,7 @@ public:
 		return tv;
 	}
 	@property
-	const(string) tag() {
+	const(string) tag() const {
 		return _tag;
 	}
 	void set(string tag)() {
@@ -142,6 +142,7 @@ public:
 	
 	@property
 	auto opDispatch(string tag,T)(T x) {
+		import std.stdio;
 		return set!(tag,T)(x);
 	}
 
@@ -173,7 +174,7 @@ unittest {
 	tv1.opDispatch!"x"= 3.14f;
 	tv1.x= 3.14f;
 	tv2.set!"z";
-	tv2.z ~= &tv1;
+	tv2.z ~= [&tv1];
 	assert (tv2.z[0].x == 3.14f);
 	tv2.y = 3.14f;
 	assert (tv2 != tv1);
@@ -221,7 +222,7 @@ template ReplaceTypeRec(From,To,Types...){
 		alias Base = ForeachType!(Types[0]);
 		alias ReplaceTypeRec = AliasSeq!(ReplaceTypeRec!(From,To,Base)[0][],ReplaceTypeRec!(From,To,Types[1..$]));
 	}
-	else static if (__traits(compiles,TemplateOf!(Types[0]))) {
+	else static if (!is(TemplateOf!(Types[0]) == void)) {
 		alias Base = TemplateOf!(Types[0]);
 		alias Args = TemplateArgsOf!(Types[0]);
 		alias ReplaceTypeRec = AliasSeq!(Base!(ReplaceTypeRec!(From,To,Args)),ReplaceTypeRec!(From,To,Types[1..$]));

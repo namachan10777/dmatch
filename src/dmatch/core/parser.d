@@ -12,7 +12,6 @@ import std.algorithm.searching;
 
 import dmatch.tvariant;
 import dmatch.core.type;
-import dmatch.core.util;
 
 struct Src {
 	immutable string ate;
