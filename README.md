@@ -1,5 +1,6 @@
 # dmatch
 [![Build Status](https://travis-ci.org/namachan10777/dmatch.svg?branch=develop)](https://travis-ci.org/namachan10777/dmatch)
+[![BSL-1.0](https://img.shields.io/badge/License-BSL%201.0-blue.svg)](http://www.boost.org/users/license.html)
 
 *This repository under development...*
 
