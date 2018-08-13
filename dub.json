@@ -9,5 +9,6 @@
 	"buildOptions":["unittests"],
 	"dflags-ldc":["-disable-linker-strip-dead"],
 	"dependencies":{
+		"pegged":"~master"
 	}
 }
